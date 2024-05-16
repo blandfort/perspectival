@@ -20,6 +20,7 @@ class Experiment:
             item_features = None,
             model_features = None,
             comparison_features = None,
+            features: Optional[List[Feature]] = None,
         ):
         self.name = name
         self.dataset = dataset
@@ -27,6 +28,10 @@ class Experiment:
         self.item_features = item_features if item_features is not None else {}
         self.model_features = model_features if model_features is not None else {}
         self.comparison_features = comparison_features if comparison_features is not None else {}
+
+        if features is not None:
+            for feature in features:
+                self.register_feature(feature)
 
     def register_feature(self, feature: Feature):
         if isinstance(feature, ItemFeature):

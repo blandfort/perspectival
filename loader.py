@@ -58,9 +58,9 @@ def parse_anthropic_item(text, answer_not_matching_behavior):
 
     return question, [choice[1] for choice in choice_list], unproblematic_index
 
-def load_anthropic_eval_dataset(repo_path: Path, dataset: str,
+def load_anthropic_eval_data(repo_path: Path, dataset: str,
         subdir: Optional[str]=None,
-    ) -> Experiment:
+    ) -> dict:
     """Load the advanced AI risk dataset from Anthropic
 
     The dataset needs to be downloaded from https://github.com/anthropics/evals
@@ -106,8 +106,6 @@ def load_anthropic_eval_dataset(repo_path: Path, dataset: str,
                     category_features.append(category)
         dataset = Dataset(name=f'anthropic evals - {dataset} - {subdir}', items=items)
         categories = Category(values=category_features)
-        experiment = Experiment(name=dataset.name, dataset=dataset)
-        experiment.register_feature(categories)
-        return experiment
+        return {'dataset': dataset, 'features': [categories]}
     else:
         raise NotImplementedError("Given dataset either doesn't exist or is not implemented yet!")
