@@ -24,12 +24,9 @@ class Experiment:
         self.name = name
         self.dataset = dataset
 
-        if item_features is not None:
-            self.item_features = item_features
-        if model_features is not None:
-            self.model_features = model_features
-        if comparison_features is not None:
-            self.comparison_features = comparison_features
+        self.item_features = item_features if item_features is not None else {}
+        self.model_features = model_features if model_features is not None else {}
+        self.comparison_features = comparison_features if comparison_features is not None else {}
 
     def register_feature(self, feature: Feature):
         if isinstance(feature, ItemFeature):
