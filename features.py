@@ -44,7 +44,7 @@ class Prediction(Feature):
         return self.__class__(values=selected_values, model=self.model)
 
 class ModelChoices(Prediction):
-    name = 'model choices'
+    name = 'Model Choices'
 
     @classmethod
     def compute(cls, dataset, model: Model):
@@ -55,7 +55,7 @@ class ModelChoices(Prediction):
         return cls(model=model.name, values=model_choices)
 
 class PredictionCorrectness(Prediction):
-    name = 'prediction correctness'
+    name = 'Prediction Correctness'
 
     @classmethod
     def compute(cls, dataset, model: Model):
@@ -68,7 +68,7 @@ class PredictionCorrectness(Prediction):
 
 
 class OptionLogLikelihood(Prediction):
-    name = 'option log likelihood'
+    name = 'Option Log Likelihood'
 
     @classmethod
     def compute(cls, dataset, model: Model):
