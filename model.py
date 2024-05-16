@@ -3,8 +3,11 @@ import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from typing import List
 
+from interfaces import Model
+from dataset import Item
 
-class Model:
+
+class LLMModel(Model):
     def __init__(self, model_name):
         """
         Initialize the Model with a transformer model and tokenizer from Hugging Face.
@@ -42,7 +45,20 @@ class Model:
 
     def compute_option_log_likelihoods(
             self,
-            item,
+            items: List[Item],
+            add_whitespace: bool=True,
+            **kwargs,
+        ) -> List[float]:
+        log_likelihoods = []
+
+        for item in items:
+            item_log_likelihoods = self.compute_option_log_likelihoods_single_item(item, **kwargs)
+            log_likelihoods.append(item_log_likelihoods)
+        return log_likelihoods
+
+    def compute_option_log_likelihoods_single_item(
+            self,
+            item: Item,
             add_whitespace: bool=True,
         ) -> List[float]:
         input_texts = [item.prompt + (" " if add_whitespace else "") + option for option in item.options]
