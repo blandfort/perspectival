@@ -1,0 +1,9 @@
+jupyter
+dotenv
+numpy
+matplotlib
+torch
+transformers
+datasets
+scikit-learn
+pydantic
