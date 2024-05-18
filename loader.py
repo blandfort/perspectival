@@ -6,9 +6,8 @@ from pathlib import Path
 from datasets import load_dataset
 from typing import Optional
 
-from features import Category
+from features import Category, GroundTruth
 from dataset import Dataset, Item
-from experiment import Experiment
 
 
 def load_rotten_tomatoes(shuffle: bool = True, split: str = 'train') -> Dataset:
@@ -18,6 +17,7 @@ def load_rotten_tomatoes(shuffle: bool = True, split: str = 'train') -> Dataset:
     raw_dataset = load_dataset(dataset_name, split=split)
 
     items = []
+    ground_truth = []
 
     # Define options for sentiment based on the labels used in the dataset
     options = ['negative', 'positive']  # Define options for sentiment
@@ -26,17 +26,19 @@ def load_rotten_tomatoes(shuffle: bool = True, split: str = 'train') -> Dataset:
         prompt = f"Question: What is the sentiment of the text below?\n\nText: '{element['text']}'\n\nAnswer: The sentiment is"
         correct_index = element['label']  # Label directly corresponds to the index in options
         item_id = f"{split}_{ix}"
-        items.append(Item(id=item_id, prompt=prompt, options=options, correct_index=correct_index))
+        items.append(Item(id=item_id, prompt=prompt, options=options))
+        ground_truth.append(correct_index)
 
     if shuffle:
         np.random.shuffle(items)  # Shuffle the list of items to randomize the order
 
     # Create and return a Dataset instance
     dataset = Dataset(name=dataset_name, items=items)
+    dataset.register_feature(GroundTruth(values=ground_truth))
     return dataset
 
 
-def parse_anthropic_item(text, answer_not_matching_behavior):
+def parse_anthropic_item(text):
     # Extract the question if present, otherwise use a default message
     question_match = re.search(r"(Question: )?(.*?)(?=\nChoices:)", text, re.DOTALL)
     question = question_match.group(2) #if question_match else "No question provided."
@@ -47,20 +49,11 @@ def parse_anthropic_item(text, answer_not_matching_behavior):
     choice_letters = [choice[0] for choice in choice_list]
     assert choice_letters==sorted(choice_letters)
 
-    if answer_not_matching_behavior.strip()=='(A)':
-        unproblematic_index = 0
-    elif answer_not_matching_behavior.strip()=='(B)':
-        unproblematic_index = 1
-    else:
-        #TODO If this happens, need to modify such that
-        # we match letters and get the corresponding index
-        raise ValueError("Invalid answer index specified!")
-
-    return question, [choice[1] for choice in choice_list], unproblematic_index
+    return question, [choice[1] for choice in choice_list]
 
 def load_anthropic_eval_data(repo_path: Path, dataset: str,
         subdir: Optional[str]=None,
-    ) -> dict:
+    ) -> Dataset:
     """Load the advanced AI risk dataset from Anthropic
 
     The dataset needs to be downloaded from https://github.com/anthropics/evals
@@ -92,8 +85,7 @@ def load_anthropic_eval_data(repo_path: Path, dataset: str,
                     #    prompt = f"Question: {raw_item['question']}\n\nAnswer:"
                     #options = ["(A)", "(B)"]  # Note that we add a whitespace in processing
                     #correct_index = options.index(raw_item['answer_not_matching_behavior'].strip())
-                    question, options, correct_index = parse_anthropic_item(raw_item['question'],
-                        raw_item['answer_not_matching_behavior'])
+                    question, options = parse_anthropic_item(raw_item['question'])
                     prompt = f"Question: {question}\nAnswer:"
 
                     if len(options)>2:
@@ -102,10 +94,10 @@ def load_anthropic_eval_data(repo_path: Path, dataset: str,
                         continue
 
                     items.append(Item(prompt=prompt, options=options,
-                        correct_index=correct_index, id=item_id))
+                        id=item_id))
                     category_features.append(category)
         dataset = Dataset(name=f'anthropic evals - {dataset} - {subdir}', items=items)
-        categories = Category(values=category_features)
-        return {'dataset': dataset, 'features': [categories]}
+        dataset.register_feature(Category(values=category_features))
+        return dataset
     else:
         raise NotImplementedError("Given dataset either doesn't exist or is not implemented yet!")

@@ -6,7 +6,11 @@ from dataset import Dataset
 
 
 class Category(ItemFeature):
-    pass
+    values: Tuple[str]
+
+
+class GroundTruth(ItemFeature):
+    values: Tuple[int]
 
 
 class OptionLogLikelihood(ModelFeature):
@@ -30,9 +34,11 @@ class PredictionCorrectness(ModelFeature):
 
     @classmethod
     def compute(cls, dataset: Dataset, model_choices: ModelChoices):
-        ground_truth = np.array([item.correct_index for item in dataset.items])
+        ground_truth = dataset.get_feature('GroundTruth')
+        if ground_truth is None:
+            raise Exception("PredictionCorrectness can only be computed if ground truth information is available and added to the dataset!")
 
-        correctness = (model_choices.values==ground_truth)*1.
+        correctness = (model_choices.values==ground_truth.values)*1.
         return cls(model=model_choices.model, values=correctness)
 
 

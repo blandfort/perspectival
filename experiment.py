@@ -11,14 +11,12 @@ from features import *
 class Experiment:
     name: str
     dataset: Dataset
-    item_features: Dict[str, ItemFeature] = {}
     model_features: Dict[str, Dict[str, ModelFeature]] = {}
     comparison_features: Dict[str, Dict[Tuple[str, str], ComparisonFeature]] = {}
 
     def __init__(self,
             name,
             dataset,
-            item_features = None,
             model_features = None,
             comparison_features = None,
             features: Optional[List[Feature]] = None,
@@ -26,7 +24,6 @@ class Experiment:
         self.name = name
         self.dataset = dataset
 
-        self.item_features = item_features if item_features is not None else {}
         self.model_features = model_features if model_features is not None else {}
         self.comparison_features = comparison_features if comparison_features is not None else {}
 
@@ -36,7 +33,7 @@ class Experiment:
 
     def register_feature(self, feature: Feature):
         if isinstance(feature, ItemFeature):
-            self.item_features[feature.name] = feature
+            self.dataset.register_feature(feature)
         elif isinstance(feature, ModelFeature):
             if feature.name not in self.model_features:
                 self.model_features[feature.name] = {}
@@ -53,8 +50,9 @@ class Experiment:
             model: Optional[str]=None,
             models: Optional[Tuple[str, str]]=None,
         ) -> Feature:
-        if feature_name in self.item_features:
-            return self.item_features[feature_name]
+        item_feature = self.dataset.get_feature(feature_name)
+        if item_feature is not None:
+            return item_feature
         elif feature_name in self.model_features:
             if model is None:
                 raise ValueError("Need to specify 'model' for model-based features!")
@@ -76,8 +74,10 @@ class Experiment:
     def get_features(self, feature_name: str) -> List[Feature]:
         features = []
 
-        if feature_name in self.item_features:
-            features.append(self.item_features[feature_name])
+        item_feature = self.dataset.get_feature(feature_name)
+        if item_feature is not None:
+            features.append(item_feature)
+
         if feature_name in self.model_features:
             features.extend(self.model_features[feature_name].values())
         if feature_name in self.comparison_features:
@@ -91,8 +91,6 @@ class Experiment:
         Keeps all features."""
         dataset = self.dataset.select(indices=indices)
 
-        item_features = {n: self.item_features[n].select(indices=indices)
-                        for n in self.item_features}
         model_features = {n: {model: self.model_features[n][model].select(indices=indices)
                             for model in self.model_features[n]}
                         for n in self.model_features}
@@ -103,7 +101,6 @@ class Experiment:
         return self.__class__(
             name=name,
             dataset=dataset,
-            item_features=item_features,
             model_features=model_features,
             comparison_features=comparison_features,
         )
@@ -195,10 +192,9 @@ class Experiment:
         print(f"ITEM ({item.id})")
         print(f'"""{item.prompt}"""')
         print(f"Options: {item.options}")
-        print(f"Ground truth: {item.options[item.correct_index]}")
 
         if feature_names is None:
-            feature_names = list(self.item_features.keys())
+            feature_names = list(self.dataset.features.keys())
             feature_names.extend(list(self.model_features.keys()))
             feature_names.extend(list(self.comparison_features.keys()))
 
