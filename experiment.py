@@ -3,8 +3,9 @@ import numpy as np
 from joblib import dump, load
 from pathlib import Path
 
-from interfaces import Feature, ItemFeature, ModelFeature, ComparisonFeature
+from interfaces import Feature, ItemFeature, ModelFeature, ComparisonFeature, Model
 from dataset import Dataset
+from features import *
 
 
 class Experiment:
@@ -106,6 +107,35 @@ class Experiment:
             model_features=model_features,
             comparison_features=comparison_features,
         )
+
+    def compute_correctness(self, models: List[Model]):
+        for model in models:
+            model_choices = self.get_feature('ModelChoices', model=model.name)
+            if model_choices is None:
+                lls = self.get_feature('OptionLogLikelihood', model=model.name)
+                if lls is None:
+                    lls = OptionLogLikelihood.compute(self.dataset, model=model)
+                    self.register_feature(lls)
+
+                model_choices = ModelChoices.compute(lls)
+                self.register_feature(model_choices)
+            self.register_feature(PredictionCorrectness.compute(self.dataset, model_choices))
+
+    def compute_log_disagreement(self, models: Tuple[Model, Model]):
+        assert len(models)==2
+
+        # Ensure that log likelihoods exist
+        lls1 = self.get_feature('OptionLogLikelihood', model=models[0].name)
+        if lls1 is None:
+            lls1 = OptionLogLikelihood.compute(self.dataset, model=models[0])
+            self.register_feature(lls1)
+        lls2 = self.get_feature('OptionLogLikelihood', model=models[1].name)
+        if lls2 is None:
+            lls2 = OptionLogLikelihood.compute(self.dataset, model=models[1])
+            self.register_feature(lls2)
+
+        log_disagreement = LogDisagreement.compute(log_likelihoods=(lls1, lls2))
+        self.register_feature(log_disagreement)
 
     def sample(
             self,
