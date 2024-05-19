@@ -4,13 +4,14 @@ import os
 import numpy as np
 from pathlib import Path
 from datasets import load_dataset
-from typing import Optional
+from typing import Optional, Tuple, List
 
 from features import Category, GroundTruth
 from dataset import Dataset, Item
+from interfaces import Feature
 
 
-def load_rotten_tomatoes(shuffle: bool = True, split: str = 'train') -> Dataset:
+def load_rotten_tomatoes(shuffle: bool = True, split: str = 'train') -> Tuple[Dataset, List[Feature]]:
     dataset_name = "rotten_tomatoes"
 
     # Load the dataset
@@ -34,8 +35,8 @@ def load_rotten_tomatoes(shuffle: bool = True, split: str = 'train') -> Dataset:
 
     # Create and return a Dataset instance
     dataset = Dataset(name=dataset_name, items=items)
-    dataset.register_feature(GroundTruth(values=ground_truth))
-    return dataset
+    features = [GroundTruth(values=ground_truth)]
+    return dataset, features
 
 
 def parse_anthropic_item(text):
@@ -53,7 +54,7 @@ def parse_anthropic_item(text):
 
 def load_anthropic_eval_data(repo_path: Path, dataset: str,
         subdir: Optional[str]=None,
-    ) -> Dataset:
+    ) -> Tuple[Dataset, List[Feature]]:
     """Load the advanced AI risk dataset from Anthropic
 
     The dataset needs to be downloaded from https://github.com/anthropics/evals
@@ -97,7 +98,7 @@ def load_anthropic_eval_data(repo_path: Path, dataset: str,
                         id=item_id))
                     category_features.append(category)
         dataset = Dataset(name=f'anthropic evals - {dataset} - {subdir}', items=items)
-        dataset.register_feature(Category(values=category_features))
-        return dataset
+        features = [Category(values=category_features)]
+        return dataset, features
     else:
         raise NotImplementedError("Given dataset either doesn't exist or is not implemented yet!")

@@ -33,11 +33,7 @@ class ModelChoices(ModelFeature):
 class PredictionCorrectness(ModelFeature):
 
     @classmethod
-    def compute(cls, dataset: Dataset, model_choices: ModelChoices):
-        ground_truth = dataset.get_feature('GroundTruth')
-        if ground_truth is None:
-            raise Exception("PredictionCorrectness can only be computed if ground truth information is available and added to the dataset!")
-
+    def compute(cls, dataset: Dataset, model_choices: ModelChoices, ground_truth: GroundTruth):
         correctness = (model_choices.values==ground_truth.values)*1.
         return cls(model=model_choices.model, values=correctness)
 
