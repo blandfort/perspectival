@@ -12,7 +12,7 @@ class Feature(metaclass=abc.ABCMeta):
         self.values = np.array(values)
 
     def select(self, indices: List[int]):
-        selected_values = np.take(self.values, indices)
+        selected_values = self.values[indices]
         return self.__class__(values=selected_values)
 
     def _get_name(self):
@@ -34,7 +34,7 @@ class ModelFeature(Feature):
         self.model = model
 
     def select(self, indices):
-        selected_values = np.take(self.values, indices)
+        selected_values = self.values[indices]
         return self.__class__(values=selected_values, model=self.model)
 
     @abc.abstractmethod
@@ -50,7 +50,7 @@ class ComparisonFeature(Feature):
         self.models = tuple(sorted(list(models)))
 
     def select(self, indices):
-        selected_values = np.take(self.values, indices)
+        selected_values = self.values[indices]
         return self.__class__(values=selected_values, models=self.models)
 
     @abc.abstractmethod
