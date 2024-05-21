@@ -10,8 +10,9 @@ from dataset import Item
 class LazyTransformer(Model):
     """Class to use transformer models while only loading them when needed"""
 
-    def __init__(self, model_name):
+    def __init__(self, model_name, **model_kwargs):
         self.name = model_name
+        self.model_kwargs = model_kwargs
 
     def compute_option_log_likelihoods(
             self,
@@ -20,8 +21,12 @@ class LazyTransformer(Model):
             **kwargs,
         ) -> List[float]:
         # Set up
-        model = AutoModelForCausalLM.from_pretrained(self.name)
-        tokenizer = AutoTokenizer.from_pretrained(self.name)
+        model = AutoModelForCausalLM.from_pretrained(self.name, **self.model_kwargs)
+        if self.name.startswith('apple/OpenELM'):
+            tokenizer_name = 'NousResearch/Llama-2-7b-hf'
+        else:
+            tokenizer_name = self.name
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
         model.eval()  # Set the model to evaluation mode
@@ -65,15 +70,19 @@ class LazyTransformer(Model):
 
 
 class Transformer(Model):
-    def __init__(self, model_name):
+    def __init__(self, model_name, **model_kwargs):
         """
         Initialize the Model with a transformer model and tokenizer from Hugging Face.
         Args:
         model_name (str): The name of the model to load (e.g., 'gpt2', 'distilgpt2').
         """
         self.name = model_name
-        self.model = AutoModelForCausalLM.from_pretrained(model_name)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+        if model_name.startswith('apple/OpenELM'):
+            tokenizer_name = 'NousResearch/Llama-2-7b-hf'
+        else:
+            tokenizer_name = model_name
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
