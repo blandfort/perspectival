@@ -11,7 +11,30 @@ from dataset import Dataset, Item
 from interfaces import Feature
 
 
-def load_rotten_tomatoes(shuffle: bool = True, split: str = 'train') -> Tuple[Dataset, List[Feature]]:
+
+def load_hellaswag(split: str = 'train') -> Tuple[Dataset, List[Feature]]:
+    dataset_name = 'hellaswag'
+
+    # Load the dataset
+    raw_dataset = load_dataset(dataset_name, split=split)
+
+    items = []
+    ground_truth = []
+
+    for ix, element in enumerate(raw_dataset):
+        prompt = element['ctx']
+        options = element['endings']
+        correct_index = int(element['label'])  # Label directly corresponds to the index in options
+        item_id = f"{split}_{ix}"
+        items.append(Item(id=item_id, prompt=prompt, options=options))
+        ground_truth.append(correct_index)
+
+    # Create and return a Dataset instance
+    dataset = Dataset(name=dataset_name, items=items)
+    features = [GroundTruth(values=ground_truth)]
+    return dataset, features
+
+def load_rotten_tomatoes(split: str = 'train') -> Tuple[Dataset, List[Feature]]:
     dataset_name = "rotten_tomatoes"
 
     # Load the dataset
@@ -29,9 +52,6 @@ def load_rotten_tomatoes(shuffle: bool = True, split: str = 'train') -> Tuple[Da
         item_id = f"{split}_{ix}"
         items.append(Item(id=item_id, prompt=prompt, options=options))
         ground_truth.append(correct_index)
-
-    if shuffle:
-        np.random.shuffle(items)  # Shuffle the list of items to randomize the order
 
     # Create and return a Dataset instance
     dataset = Dataset(name=dataset_name, items=items)
