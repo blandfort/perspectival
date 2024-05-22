@@ -152,7 +152,3 @@ class Transformer(Model):
         masked_log_probs = token_log_probs * attention_mask
 
         return torch.sum(masked_log_probs, dim=1).numpy()
-
-
-#TODO Write tests for the method to compute options probs
-# (For single token options, do other way to compute and compare)
