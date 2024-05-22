@@ -7,3 +7,4 @@ transformers
 datasets
 scikit-learn
 pydantic
+jaxtyping
