@@ -125,7 +125,7 @@ class Experiment:
                 self.register_feature(model_choices)
             self.register_feature(PredictionCorrectness.compute(self.dataset, model_choices=model_choices, ground_truth=ground_truth))
 
-    def compute_log_disagreement(self, models: Tuple[Model, Model]):
+    def compute_disagreement(self, models: Tuple[Model, Model]):
         assert len(models)==2
 
         # Ensure that log likelihoods exist
@@ -140,6 +140,7 @@ class Experiment:
 
         log_disagreement = LogDisagreement.compute(log_likelihoods=(lls1, lls2))
         self.register_feature(log_disagreement)
+        self.register_feature(BinaryDisagreement.compute(log_disagreement))
 
     def sample(
             self,
