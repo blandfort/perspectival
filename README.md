@@ -27,8 +27,6 @@ TODO How to install and run (install requirements, install the repo)
 
 You can find full examples in [demo.ipynb](demo.ipynb).
 
-TODO Below, for each step specify the interface as input and output, then give some examples and details
-
 
 ### Initializing Models
 
@@ -54,16 +52,38 @@ Available datasets:
 
 ### Setting up an Experiment
 
-TODO
+To run experiments, use Experiment from [experiment.py](experiment.py). An Experiment is initialized by passing a Dataset, a name and optionally a list of Feature.
+
+You can also work with a subset of the dataset by calling the `experiment.sample` method.
+For example, this allows you to run brief sanity checks and verifying that everything is working before starting longer-running computations.
+
 
 ### Adding Features to Experiments
 
-TODO
+Format: Features used for experiments have to implement the interface Feature (see [interfaces.py](interfaces.py). There are three types of features to use:
+
+- ItemFeature: These features don't depend on any model but either come with the dataset or are computed without the models to be analyzed (e.g. based on regular expressions on the item text)
+- ModelFeature: These features are computed for a single model. An example is OptionLogLikelihood, which computes the log likelihoods a model assigns to the different options described in an item.
+- ComparisonFeature: These features are based on a pair of models. For example, LogDisagreement measures the amount of disagreement for each item.
+
+Usage:
+
+- Create a new feature either by using its init function and passing the values directly, or calling its compute method.
+- Add features to the experiment by calling `experiment.register_feature(feature)`
+
+Available features:
+
+- In [features.py](features.py) you can find several feature classes
+- You can also implement own feature classes as subclass of one of the three classes ItemFeature, ModelFeature or ComparisonFeature
+
 
 ### Exploring Results
 
-TODO
+Once you have an Experiment with interesting features, you can
 
+* Save the experiment with `experiment.save`
+* Use the `experiment.sample` method to look at interesting cases (e.g. items with highest disagreement scores)
+* Display items of choice together with features, using `experiment.display_items`
 
 
 ## Status
@@ -73,6 +93,7 @@ TODO
 - Document properly
   - Add how-to
   - Brush up demo notebook
+- Create a Python package so that Perspectival can be installed locally
 - Adjust preprocessing / dataset loading to match reported performances on hellaswag (smallest apple model 5 points below, largest 10 points – but based on 100 samples from training set only)
 
 
@@ -84,6 +105,10 @@ The following extensions are planned soon, most likely in this order:
   - Offer different types of visualization/analyses depending also on the data type of feature (bool, discrete, float)
 - In-depth analysis of examples, also looking at token-based features and extending to architecture-specific comparisons like differences in attention
 - Adding explanations and evaluate how much of a comparison feature one or several features can explain
+
+Usability features to add:
+
+- Show progress when computing log likelihoods
 
 Some more ideas for later:
 
