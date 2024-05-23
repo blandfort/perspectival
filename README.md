@@ -12,9 +12,58 @@ Notes:
 
 ## Usage
 
-TODO How to install and run
+### Installation
 
-TODO Explain how to load models and set up experiments (linking also to the demo notebook)
+TODO How to install and run (install requirements, install the repo)
+
+
+### Workflow
+
+1. Initialize two models (subclasses of Model)
+2. Load a dataset
+3. Set up an Experiment
+4. Add features to the Experiment by running comparisons
+5. Explore the results
+
+You can find full examples in [demo.ipynb](demo.ipynb).
+
+TODO Below, for each step specify the interface as input and output, then give some examples and details
+
+
+### Initializing Models
+
+Format: Models used for experiments have to implement the interface Model (see [interfaces.py](interfaces.py)).
+
+Available models:
+
+- Model classes from [model.py](model.py)
+  - Currently, this includes two classes to use Huggingface transformers (tested for Apple's OpenELM models, GPT2 and DistilGPT2)
+- You can implement your own model class (as subclass of Model)
+
+
+### Loading Datasets
+
+Format: Datasets used for experiments should be subclasses of Dataset. Essentially, a Dataset has a name and list of Items, where each Item again has a certain format. If you want to use item-based features which are not part of the Item interface (e.g. categories), you can use ItemFeature. (See [interfaces.py](interfaces.py) for details.)
+
+Available datasets:
+
+- Datasets (and features) returned by functions in [loader.py](loader.py).
+  - Currently, this includes Hellaswag, Rotten Tomatoes and part of Anthropic's advanced AI risk dataset (see [loader.py](loader.py) for details)
+- You can implement own dataset classes (as subclass of Dataset)
+
+
+### Setting up an Experiment
+
+TODO
+
+### Adding Features to Experiments
+
+TODO
+
+### Exploring Results
+
+TODO
+
 
 
 ## Status
@@ -25,13 +74,6 @@ TODO Explain how to load models and set up experiments (linking also to the demo
   - Add how-to
   - Brush up demo notebook
 - Adjust preprocessing / dataset loading to match reported performances on hellaswag (smallest apple model 5 points below, largest 10 points – but based on 100 samples from training set only)
-
-
-### Current Status
-
-* Tested on following environments: MacOS with Python3.11.0
-* Supported models: Huggingface transformers (tested for Apple's OpenELM models, GPT2 and DistilGPT2)
-* Supported datasets: Hellaswag, Rotten Tomatoes and part of Anthropic's advanced AI risk dataset (see `loader.py` for details)
 
 
 ### Plans
