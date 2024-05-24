@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Tuple
 
-from interfaces import ItemFeature, ModelFeature, ComparisonFeature, Model
-from dataset import Dataset
+from .interfaces import ItemFeature, ModelFeature, ComparisonFeature, Model
+from .dataset import Dataset
 
 
 class Category(ItemFeature):
@@ -60,3 +60,11 @@ class LogDisagreement(ComparisonFeature):
 
         log_disagreement = -1 * (model1_selections1 - model1_selections2) * (model2_selections1 - model2_selections2)
         return cls(models=model_names, values=log_disagreement)
+
+
+class BinaryDisagreement(ComparisonFeature):
+
+    @classmethod
+    def compute(cls, log_disagreement: LogDisagreement):
+        values = log_disagreement.values>0
+        return cls(models=log_disagreement.models, values=values)

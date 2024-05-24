@@ -2,7 +2,7 @@ import abc
 import numpy as np
 from typing import Tuple, Any, List
 
-from dataset import Item
+from .dataset import Item
 
 
 class Feature(metaclass=abc.ABCMeta):

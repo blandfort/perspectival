@@ -6,9 +6,9 @@ from pathlib import Path
 from datasets import load_dataset
 from typing import Optional, Tuple, List
 
-from features import Category, GroundTruth
-from dataset import Dataset, Item
-from interfaces import Feature
+from .features import Category, GroundTruth
+from .dataset import Dataset, Item
+from .interfaces import Feature
 
 
 
