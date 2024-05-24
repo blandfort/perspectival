@@ -1,11 +1,13 @@
 from typing import List, Union, Dict, Tuple, Optional, Type
 import numpy as np
+import pandas as pd
+import scipy.stats as st
 from joblib import dump, load
 from pathlib import Path
 
-from interfaces import Feature, ItemFeature, ModelFeature, ComparisonFeature, Model
-from dataset import Dataset
-from features import *
+from .interfaces import Feature, ItemFeature, ModelFeature, ComparisonFeature, Model
+from .dataset import Dataset
+from .features import *
 
 
 class Experiment:
@@ -230,3 +232,38 @@ class Experiment:
         for ix in item_ixs:
             self.display_item(item_ix=ix, feature_names=feature_names)
             print('\n\n' + 20*'-' + '\n\n')
+
+    def feature_dependency_table(
+            self,
+            input_feature: str,
+            output_feature: str='BinaryDisagreement',
+            p_value: float=.95,
+        ):
+        #TODO in case there are several such features we need to show a warning at least
+        values = self.get_features(output_feature)[0].values
+        input_values = self.get_feature(input_feature).values
+
+        data = []
+
+        def make_data_element(input_value: str, output_values):
+            if len(set(output_values))<2:
+                conf_interval = None
+            else:
+                conf_interval = st.t.interval(p_value, len(output_values)-1, loc=np.mean(output_values), scale=st.sem(output_values))
+            d = {
+                input_feature: input_value,
+                '#items': len(output_values),
+                output_feature: f"{np.mean(output_values):.2f} ({conf_interval[0]:.2f}-{conf_interval[1]:.2f})"
+                    if conf_interval is not None else f"{np.mean(output_values):.2f}",
+            }
+            return d
+
+        for v in sorted(list(set(input_values))):
+            mask = input_values==v
+            value_selection = self.sample(mask=mask)
+
+            selection_values = value_selection.get_features(output_feature)[0].values  #TODO see above
+            data.append(make_data_element(input_value=v, output_values=selection_values))
+        data.append(make_data_element(input_value='OVERALL', output_values=selection_values))
+
+        return pd.DataFrame(data)

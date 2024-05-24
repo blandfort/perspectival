@@ -3,8 +3,8 @@ import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from typing import List
 
-from interfaces import Model
-from dataset import Item
+from .interfaces import Model
+from .dataset import Item
 
 
 class LazyTransformer(Model):

@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Tuple
 
-from interfaces import ItemFeature, ModelFeature, ComparisonFeature, Model
-from dataset import Dataset
+from .interfaces import ItemFeature, ModelFeature, ComparisonFeature, Model
+from .dataset import Dataset
 
 
 class Category(ItemFeature):
