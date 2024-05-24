@@ -30,34 +30,34 @@ Notes:
 4. Add features to the Experiment by running comparisons
 5. Explore the results
 
-You can find full examples in [demo.ipynb](demo.ipynb).
+You can find full examples in [examples/](examples/).
 
 
 ### Initializing Models
 
-Format: Models used for experiments have to implement the interface Model (see [interfaces.py](interfaces.py)).
+Format: Models used for experiments have to implement the interface Model (see [interfaces.py](perspectival/interfaces.py)).
 
 Available models:
 
-- Model classes from [model.py](model.py)
+- Model classes from [model.py](perspectival/model.py)
   - Currently, this includes two classes to use Huggingface transformers (tested for Apple's OpenELM models, GPT2 and DistilGPT2)
 - You can implement your own model class (as subclass of Model)
 
 
 ### Loading Datasets
 
-Format: Datasets used for experiments should be subclasses of Dataset. Essentially, a Dataset has a name and list of Items, where each Item again has a certain format. If you want to use item-based features which are not part of the Item interface (e.g. categories), you can use ItemFeature. (See [interfaces.py](interfaces.py) for details.)
+Format: Datasets used for experiments should be subclasses of Dataset. Essentially, a Dataset has a name and list of Items, where each Item again has a certain format. If you want to use item-based features which are not part of the Item interface (e.g. categories), you can use ItemFeature. (See [interfaces.py](perspectival/interfaces.py) for details.)
 
 Available datasets:
 
-- Datasets (and features) returned by functions in [loader.py](loader.py).
-  - Currently, this includes Hellaswag, Rotten Tomatoes and part of Anthropic's advanced AI risk dataset (see [loader.py](loader.py) for details)
+- Datasets (and features) returned by functions in [loader.py](perspectival/loader.py).
+  - Currently, this includes Hellaswag, Rotten Tomatoes and part of Anthropic's advanced AI risk dataset (see [loader.py](perspectival/loader.py) for details)
 - You can implement own dataset classes (as subclass of Dataset)
 
 
 ### Setting up an Experiment
 
-To run experiments, use Experiment from [experiment.py](experiment.py). An Experiment is initialized by passing a Dataset, a name and optionally a list of Feature.
+To run experiments, use Experiment from [experiment.py](perspectival/experiment.py). An Experiment is initialized by passing a Dataset, a name and optionally a list of Feature.
 
 You can also work with a subset of the dataset by calling the `experiment.sample` method.
 For example, this allows you to run brief sanity checks and verifying that everything is working before starting longer-running computations.
@@ -65,7 +65,7 @@ For example, this allows you to run brief sanity checks and verifying that every
 
 ### Adding Features to Experiments
 
-Format: Features used for experiments have to implement the interface Feature (see [interfaces.py](interfaces.py). There are three types of features to use:
+Format: Features used for experiments have to implement the interface Feature (see [interfaces.py](perspectival/interfaces.py). There are three types of features to use:
 
 - ItemFeature: These features don't depend on any model but either come with the dataset or are computed without the models to be analyzed (e.g. based on regular expressions on the item text)
 - ModelFeature: These features are computed for a single model. An example is OptionLogLikelihood, which computes the log likelihoods a model assigns to the different options described in an item.
@@ -78,7 +78,7 @@ Usage:
 
 Available features:
 
-- In [features.py](features.py) you can find several feature classes
+- In [features.py](perspectival/features.py) you can find several feature classes
 - You can also implement own feature classes as subclass of one of the three classes ItemFeature, ModelFeature or ComparisonFeature
 
 
