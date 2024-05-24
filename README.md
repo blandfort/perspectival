@@ -95,10 +95,6 @@ Once you have an Experiment with interesting features, you can
 
 ### Urgent TODOs
 
-- Document properly
-  - Add how-to
-  - Brush up demo notebook
-- Create a Python package so that Perspectival can be installed locally
 - Adjust preprocessing / dataset loading to match reported performances on hellaswag (smallest apple model 5 points below, largest 10 points – but based on 100 samples from training set only)
 
 
