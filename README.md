@@ -102,15 +102,16 @@ Once you have an Experiment with interesting features, you can
 
 The following extensions are planned soon, most likely in this order:
 
-- Feature dependencies: Specify a primary feature (comparison one) and another feature and visualize the dependency (E.g. how is disagreement different for categories; or does the presence of some regex pattern correlate with one model being better?)
-  - Offer different types of visualization/analyses depending also on the data type of feature (bool, discrete, float)
 - In-depth analysis of examples, also looking at token-based features and extending to architecture-specific comparisons like differences in attention
 - Adding explanations and evaluate how much of a comparison feature one or several features can explain
+- Feature dependencies: Extending analysis of how features relate to each other, e.g. to compute correlation coefficients between LogDisagreement and scalar input features
 
-Usability features to add:
+Engineering and usability features to add:
 
 - Show progress when computing log likelihoods
 - Make saving and loading experiments more robust (changes to Experiment class can lead loading of previous experiments to fail)
+- Add linting and testing (adding CICD pipeline)
+- Use proper versioning and create package for registry in CICD pipeline
 
 Some more ideas for later:
 
