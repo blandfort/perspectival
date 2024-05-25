@@ -12,11 +12,25 @@ from .interfaces import Feature
 
 
 
-def load_hellaswag(split: str = 'train') -> Tuple[Dataset, List[Feature]]:
+def load_hellaswag(
+        split: str = 'train',
+        split_type: Optional[str]=None,
+    ) -> Tuple[Dataset, List[Feature]]:
     """Load the HellaSwag dataset.
 
     Also see https://huggingface.co/datasets/Rowan/hellaswag"""
     dataset_name = 'hellaswag'
+
+    def preprocess(text):
+        """Preprocess text of a HellaSwag item.
+
+        Taken from https://github.com/EleutherAI/lm-evaluation-harness/blob/78a215e06a3f8bdf2c4be010025ebec34b80ff80/lm_eval/tasks/hellaswag/utils.py"""
+        text = text.strip()
+        # NOTE: Brackets are artifacts of the WikiHow dataset portion of HellaSwag.
+        text = text.replace(" [title]", ". ")
+        text = re.sub("\\[.*?\\]", "", text)
+        text = text.replace("  ", " ")
+        return text
 
     # Load the dataset
     raw_dataset = load_dataset(dataset_name, split=split)
@@ -25,8 +39,13 @@ def load_hellaswag(split: str = 'train') -> Tuple[Dataset, List[Feature]]:
     ground_truth = []
 
     for ix, element in enumerate(raw_dataset):
-        prompt = element['ctx']
-        options = element['endings']
+        if split_type is not None:
+            if element['split_type']!=split_type:
+                continue
+
+        ctx = element["ctx_a"] + " " + element["ctx_b"].capitalize()
+        prompt = preprocess(element["activity_label"] + ": " + ctx)
+        options = [preprocess(ending) for ending in element['endings']]
 
         # Label directly corresponds to the index in options
         correct_index = int(element['label']) if split!='test' else None

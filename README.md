@@ -14,10 +14,13 @@ Notes:
 
 ### Installation
 
-1. Download the repository using `git clone`
-2. cd to the repository
-3. Optional: Set up and activate a virtual environment
-4. Install Perspectival with `pip install -e .`
+To install the `perspectival` package, run:
+
+```bash
+git clone https://github.com/blandfort/perspectival
+cd perspectival
+pip install -e .
+```
 
 (So far tested on MacOS with Python3.11.0.)
 
