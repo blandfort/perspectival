@@ -13,6 +13,9 @@ from .interfaces import Feature
 
 
 def load_hellaswag(split: str = 'train') -> Tuple[Dataset, List[Feature]]:
+    """Load the HellaSwag dataset.
+
+    Also see https://huggingface.co/datasets/Rowan/hellaswag"""
     dataset_name = 'hellaswag'
 
     # Load the dataset
@@ -24,14 +27,21 @@ def load_hellaswag(split: str = 'train') -> Tuple[Dataset, List[Feature]]:
     for ix, element in enumerate(raw_dataset):
         prompt = element['ctx']
         options = element['endings']
-        correct_index = int(element['label'])  # Label directly corresponds to the index in options
+
+        # Label directly corresponds to the index in options
+        correct_index = int(element['label']) if split!='test' else None
+        # test split doesn't have labels
+
         item_id = f"{split}_{ix}"
         items.append(Item(id=item_id, prompt=prompt, options=options))
         ground_truth.append(correct_index)
 
     # Create and return a Dataset instance
     dataset = Dataset(name=dataset_name, items=items)
-    features = [GroundTruth(values=ground_truth)]
+    if split!='test':
+        features = [GroundTruth(values=ground_truth)]
+    else:
+        features = []
     return dataset, features
 
 def load_rotten_tomatoes(split: str = 'train') -> Tuple[Dataset, List[Feature]]:
