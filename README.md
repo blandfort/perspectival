@@ -94,14 +94,7 @@ Once you have an Experiment with interesting features, you can
 * Display items of choice together with features, using `experiment.display_items`
 
 
-## Status
-
-### Urgent TODOs
-
-- Adjust preprocessing / dataset loading to match reported performances on hellaswag (smallest apple model 5 points below, largest 10 points – but based on 100 samples from training set only)
-
-
-### Plans
+## Plans
 
 The following extensions are planned soon, most likely in this order:
 
