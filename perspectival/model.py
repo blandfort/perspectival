@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from typing import List
+from tqdm import tqdm
 
 from .interfaces import Model
 from .dataset import Item
@@ -39,7 +40,8 @@ class LazyTransformer(Model):
         # Initialize return list
         log_likelihoods = []
 
-        for item in items:
+        print("Computing option log likelihoods ...")
+        for item in tqdm(items):
             input_texts = [item.prompt + (" " if add_whitespace else "") + option for option in item.options]
 
             # Tokenize the combined texts
@@ -117,7 +119,8 @@ class Transformer(Model):
         ) -> List[float]:
         log_likelihoods = []
 
-        for item in items:
+        print("Computing option log likelihoods ...")
+        for item in tqdm(items):
             item_log_likelihoods = self.compute_option_log_likelihoods_single_item(item, **kwargs)
             log_likelihoods.append(item_log_likelihoods)
         return log_likelihoods

@@ -108,7 +108,6 @@ The following extensions are planned soon, most likely in this order:
 
 Engineering and usability features to add:
 
-- Show progress when computing log likelihoods
 - Make saving and loading experiments more robust (changes to Experiment class can lead loading of previous experiments to fail)
 - Add linting and testing (adding CICD pipeline)
 - Use proper versioning and create package for registry in CICD pipeline
