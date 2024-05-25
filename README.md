@@ -14,10 +14,13 @@ Notes:
 
 ### Installation
 
-1. Download the repository using `git clone`
-2. cd to the repository
-3. Optional: Set up and activate a virtual environment
-4. Install Perspectival with `pip install -e .`
+To install the `perspectival` package, run:
+
+```bash
+git clone https://github.com/blandfort/perspectival
+cd perspectival
+pip install -e .
+```
 
 (So far tested on MacOS with Python3.11.0.)
 
@@ -108,7 +111,6 @@ The following extensions are planned soon, most likely in this order:
 
 Engineering and usability features to add:
 
-- Show progress when computing log likelihoods
 - Make saving and loading experiments more robust (changes to Experiment class can lead loading of previous experiments to fail)
 - Add linting and testing (adding CICD pipeline)
 - Use proper versioning and create package for registry in CICD pipeline
