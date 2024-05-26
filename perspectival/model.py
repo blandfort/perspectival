@@ -20,20 +20,17 @@ class Transformer(Model):
             self.model, self.tokenizer = self._load_model()
 
     def _load_model(self):
-        if self.lazy_loading:
-            model = AutoModelForCausalLM.from_pretrained(self.name, **self.model_kwargs)
-            if self.name.startswith('apple/OpenELM'):
-                tokenizer_name = 'NousResearch/Llama-2-7b-hf'
-            else:
-                tokenizer_name = self.name
-            tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
-            if tokenizer.pad_token is None:
-                tokenizer.pad_token = tokenizer.eos_token
-            model.eval()  # Set the model to evaluation mode
-
-            return model, tokenizer
+        model = AutoModelForCausalLM.from_pretrained(self.name, **self.model_kwargs)
+        if self.name.startswith('apple/OpenELM'):
+            tokenizer_name = 'NousResearch/Llama-2-7b-hf'
         else:
-            return self.model, self.tokenizer
+            tokenizer_name = self.name
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        model.eval()  # Set the model to evaluation mode
+
+        return model, tokenizer
 
     def compute_option_log_likelihoods(
             self,
@@ -41,7 +38,10 @@ class Transformer(Model):
             add_whitespace: bool=True,
             **kwargs,
         ) -> List[float]:
-        model, tokenizer = self._load_model()
+        if self.lazy_loading:
+            model, tokenizer = self._load_model()
+        else:
+            model, tokenizer = self.model, self.tokenizer
 
         def compute_logits(encoded_texts):
             with torch.no_grad():
