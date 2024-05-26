@@ -264,6 +264,6 @@ class Experiment:
 
             selection_values = value_selection.get_features(output_feature)[0].values  #TODO see above
             data.append(make_data_element(input_value=v, output_values=selection_values))
-        data.append(make_data_element(input_value='OVERALL', output_values=selection_values))
+        data.append(make_data_element(input_value='OVERALL', output_values=values))
 
         return pd.DataFrame(data)
