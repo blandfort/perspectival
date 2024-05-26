@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import numpy as np
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from typing import List
 from tqdm import tqdm
@@ -36,6 +37,7 @@ class Transformer(Model):
             self,
             items: List[Item],
             add_whitespace: bool=True,
+            token_level: bool=False,
             **kwargs,
         ) -> List[float]:
         if self.lazy_loading:
@@ -65,18 +67,39 @@ class Transformer(Model):
             prompt_length = len(tokenizer(item.prompt, add_special_tokens=False)['input_ids']) #- 1
 
             # Calculate log probabilities from the logits for each token
-            log_probs = F.log_softmax(logits, dim=-1)[:, prompt_length - 1:-1]
-            # Need to offset by one since last position contains prediction for current token
+            log_probs = F.log_softmax(logits, dim=-1)
 
-            input_ids = encoded_inputs['input_ids'][:, prompt_length:]
-            attention_mask = encoded_inputs['attention_mask'][:, prompt_length:]
+            if tokenizer.padding_side=='right':
+                # Need to offset by one since last position contains prediction for current token
+                log_probs = log_probs[:, prompt_length - 1:-1]
 
-            # Get log probabilities of actual tokens
-            token_log_probs = log_probs.gather(2, input_ids.unsqueeze(-1)).squeeze(-1)
+                input_ids = encoded_inputs['input_ids'][:, prompt_length:]
+                attention_mask = encoded_inputs['attention_mask'][:, prompt_length:]
 
-            # Set irrelevant entries at the end (from padding) to zero
-            masked_log_probs = token_log_probs * attention_mask
+                # Get log probabilities of actual tokens
+                token_log_probs = log_probs.gather(2, input_ids.unsqueeze(-1)).squeeze(-1)
 
-            item_log_likelihoods = torch.sum(masked_log_probs, dim=1).numpy()
-            log_likelihoods.append(item_log_likelihoods)
+                # Set irrelevant entries at the end (from padding) to zero
+                masked_log_probs = (token_log_probs * attention_mask).detach().numpy()
+
+            else:
+                # Offset by one since likelihoods refer to next position
+                log_probs = log_probs[:, :-1]
+                input_ids = encoded_inputs['input_ids'][:, 1:]
+                attention_mask = encoded_inputs['attention_mask']
+                offsets = np.argmax(attention_mask, axis=1) + prompt_length
+                attention_mask = attention_mask[:, 1:]
+
+                token_log_probs = log_probs.gather(2, input_ids.unsqueeze(-1)).squeeze(-1)
+                masked_log_probs = (token_log_probs * attention_mask).detach().numpy()
+
+                input_ids = [ids[offset:] for ids, offset in zip(input_ids, offsets)]
+                masked_log_probs = [lls[offset:] for lls, offset in zip(masked_log_probs, offsets)]
+
+            if token_level:
+                log_likelihoods.append({'tokens': input_ids, 'log_likelihoods': masked_log_probs})
+            else:
+                #item_log_likelihoods = torch.sum(masked_log_probs, dim=1).numpy()
+                item_log_likelihoods = [np.sum(lls) for lls in masked_log_probs]
+                log_likelihoods.append(item_log_likelihoods)
         return log_likelihoods
