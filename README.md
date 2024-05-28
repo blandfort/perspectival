@@ -96,11 +96,14 @@ Once you have an Experiment with interesting features, you can
 
 ## Plans
 
-The following extensions are planned soon, most likely in this order:
+Functionality to add:
 
-- In-depth analysis of examples, also looking at token-based features and extending to architecture-specific comparisons like differences in attention
 - Adding explanations and evaluate how much of a comparison feature one or several features can explain
 - Feature dependencies: Extending analysis of how features relate to each other, e.g. to compute correlation coefficients between LogDisagreement and scalar input features
+- Extending to architecture-specific comparisons like differences in attention
+- Add analyses based on generation (Note that here the disagreement score enables new analyses, as two models will generate different responses for most prompts!)
+- For examples, also make it possible to view most similar ones (ideally based on embeddings), to quickly check some intuitions like "Additional structure in the prompt like [header] leads to more disagreement"
+- Compare more than two models: Mostly requires computing different comparison features
 
 Engineering and usability features to add:
 
@@ -109,9 +112,3 @@ Engineering and usability features to add:
 - Normalize log disagreement scores (per item)
 - Add linting and testing (adding CICD pipeline)
 - Use proper versioning and create package for registry in CICD pipeline
-
-Some more ideas for later:
-
-- Add analyses based on generation (Note that here the disagreement score enables new analyses, as two models will generate different responses for most prompts!)
-- For examples, also make it possible to view most similar ones (ideally based on embeddings), to quickly check some intuitions like "Additional structure in the prompt like [header] leads to more disagreement"
-- Compare more than two models: Mostly requires computing different comparison features
