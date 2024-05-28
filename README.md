@@ -111,5 +111,7 @@ Engineering and usability features to add:
 - Make saving and loading experiments more robust (changes to Experiment class can lead loading of previous experiments to fail)
 - Improve efficiency: Can we float16 models? Also use batching
 - Normalize log disagreement scores (per item)
-- Add linting and testing (adding CICD pipeline)
+- Further dataset loaders
+- Add linting (adding CICD pipeline)
+- Add further testing
 - Use proper versioning and create package for registry in CICD pipeline

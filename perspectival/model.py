@@ -102,7 +102,7 @@ class Transformer(Model):
             logits = compute_logits(encoded_inputs)
 
             # Ignore the log probs at the beginning
-            prompt_length = len(tokenizer(item.prompt, add_special_tokens=False)['input_ids'])
+            prompt_length = len(tokenizer(item.prompt, add_special_tokens=False)['input_ids']) - 1
 
             # Calculate log probabilities from the logits for each token
             log_probs = F.log_softmax(logits, dim=-1)
@@ -159,8 +159,7 @@ class SimpleTransformer(Transformer):
     def compute_option_log_likelihoods(
             self,
             items: List[Item],
-            add_whitespace='conditional',
-            token_level: bool=False,
+            subtract_prompt: bool=True,
             **kwargs,
         ) -> List[float]:
         if self.lazy_loading:
@@ -168,20 +167,18 @@ class SimpleTransformer(Transformer):
         else:
             model, tokenizer = self.model, self.tokenizer
 
-        #print(f"Whitespace setting: {add_whitespace}")
-
         log_likelihoods = []
 
         print("Computing option log likelihoods ...")
         for item in tqdm(items):
-            if add_whitespace=='conditional':
-                input_texts = [item.prompt + (" " if (not item.prompt.endswith(' ') and not option.startswith(' ')) else "") + option for option in item.options]
-            elif add_whitespace:
-                input_texts = [item.prompt + " " + option for option in item.options]
-            else:
-                input_texts = [item.prompt + option for option in item.options]
+            input_texts = [item.prompt + (" " if (not item.prompt.endswith(' ') and not option.startswith(' ')) else "") + option for option in item.options]
 
-            prompt_log_likelihoods = np.sum(compute_token_log_likelihood(transformer=model, tokenizer=tokenizer, text=item.prompt, add_special_tokens=True)['log_likelihoods'])
+            if subtract_prompt:
+                # .rstrip() is to avoid that a whitespace token with low likelihood
+                # is considered here (which could lead to overall positive values in the total!)
+                prompt_log_likelihood = np.sum(compute_token_log_likelihood(transformer=model, tokenizer=tokenizer, text=item.prompt.rstrip(), add_special_tokens=True)['log_likelihoods'])
+            else:
+                prompt_log_likelihood = 0  # dummy with no effect
 
             option_log_likelihoods = []
             for text in input_texts:
