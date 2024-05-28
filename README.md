@@ -105,11 +105,13 @@ The following extensions are planned soon, most likely in this order:
 Engineering and usability features to add:
 
 - Make saving and loading experiments more robust (changes to Experiment class can lead loading of previous experiments to fail)
+- Improve efficiency: Can we float16 models? Also use batching
+- Normalize log disagreement scores (per item)
 - Add linting and testing (adding CICD pipeline)
 - Use proper versioning and create package for registry in CICD pipeline
 
 Some more ideas for later:
 
-- Add analyses based on generation
+- Add analyses based on generation (Note that here the disagreement score enables new analyses, as two models will generate different responses for most prompts!)
 - For examples, also make it possible to view most similar ones (ideally based on embeddings), to quickly check some intuitions like "Additional structure in the prompt like [header] leads to more disagreement"
 - Compare more than two models: Mostly requires computing different comparison features
