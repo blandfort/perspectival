@@ -102,7 +102,7 @@ class Transformer(Model):
             logits = compute_logits(encoded_inputs)
 
             # Ignore the log probs at the beginning
-            prompt_length = len(tokenizer(item.prompt, add_special_tokens=False)['input_ids'])
+            prompt_length = len(tokenizer(item.prompt, add_special_tokens=False)['input_ids']) - 1
 
             # Calculate log probabilities from the logits for each token
             log_probs = F.log_softmax(logits, dim=-1)
@@ -172,7 +172,9 @@ class SimpleTransformer(Transformer):
         for item in tqdm(items):
             input_texts = [item.prompt + (" " if (not item.prompt.endswith(' ') and not option.startswith(' ')) else "") + option for option in item.options]
 
-            prompt_log_likelihoods = np.sum(compute_token_log_likelihood(transformer=model, tokenizer=tokenizer, text=item.prompt, add_special_tokens=True)['log_likelihoods'])
+            # .rstrip() is to avoid that a whitespace token with low likelihood
+            # is considered here (which could lead to overall positive values in the total!)
+            prompt_log_likelihood = np.sum(compute_token_log_likelihood(transformer=model, tokenizer=tokenizer, text=item.prompt.rstrip(), add_special_tokens=True)['log_likelihoods'])
 
             option_log_likelihoods = []
             for text in input_texts:
