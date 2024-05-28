@@ -92,6 +92,7 @@ Once you have an Experiment with interesting features, you can
 * Save the experiment with `experiment.save`
 * Use the `experiment.sample` method to look at interesting cases (e.g. items with highest disagreement scores)
 * Display items of choice together with features, using `experiment.display_items`
+* Look at token-level differences, using `perspectival.inspect` (for an example, see [token_level_differences.ipynb](examples/token_level_differences.ipynb))
 
 
 ## Plans
