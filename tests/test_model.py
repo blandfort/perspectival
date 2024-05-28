@@ -2,25 +2,31 @@ import pytest
 import numpy as np
 
 from perspectival.dataset import Item
-from perspectival.model import Transformer, SimpleTransformer
+from perspectival.model import Transformer, SimpleTransformer, compute_token_log_likelihood
 
 
-@pytest.fixture
-def transformer_model():
+
+# Parametrize the fixture to create different Transformer models
+@pytest.fixture(params=[
+    ('gpt2', False),
+    ('apple/OpenELM-270M', False),
+])
+def transformer_model(request):
     #TODO problem in cicd pipeline will be that this model needs to be downloaded...
-    model = Transformer('gpt2', lazy_loading=False)
-    return model
+    model_name, lazy_loading = request.param
+    return Transformer(model_name, lazy_loading=lazy_loading, model_kwargs={'trust_remote_code': True})
 
-@pytest.fixture
-def simple_transformer_model():
-    #TODO problem in cicd pipeline will be that this model needs to be downloaded...
-    model = SimpleTransformer('gpt2', lazy_loading=False)
-    return model
+#@pytest.fixture
+#def simple_transformer_model():
+#    #TODO problem in cicd pipeline will be that this model needs to be downloaded...
+#    model = SimpleTransformer('gpt2', lazy_loading=False)
+#    return model
 
 # Define a parametrized fixture that includes all your test cases
 @pytest.fixture(params=[
     (Item(id=0, prompt="This is ", options=["a", "the", "my", "banana four"]), -1),
     (Item(id=1, prompt="Welcome to ", options=["school", "asdf", "the world"]), 1),
+    (Item(id=2, prompt="When you test,", options=[" be sure to", " you", ". No"]), 2),
     # Add more test cases here as tuples of (Item, unlikely_index)
 ])
 def test_data(request):
@@ -34,10 +40,15 @@ def test_obvious_choices(transformer_model, test_data):
     assert np.max(log_likelihoods) < 0
     assert item.options[np.argmin(log_likelihoods)] == item.options[unlikely_index]
 
-def test_model_equivalence(transformer_model, simple_transformer_model, test_data):
+def test_option_ranking(transformer_model, test_data):
     item, unlikely_index = test_data
     log_likelihoods = transformer_model.compute_option_log_likelihoods(items=[item])[0]
-    simple_log_likelihoods = simple_transformer_model.compute_option_log_likelihoods(items=[item])[0]
+
+    simple_log_likelihoods = []
+    for option in item.options:
+        text = item.prompt + option
+        log_ls = np.sum(compute_token_log_likelihood(transformer_model.model, transformer_model.tokenizer, text=text)['log_likelihoods'])
+        simple_log_likelihoods.append(log_ls)
     print("Log likelihoods:", log_likelihoods, simple_log_likelihoods)
 
     assert len(log_likelihoods) == len(simple_log_likelihoods)
@@ -47,6 +58,20 @@ def test_model_equivalence(transformer_model, simple_transformer_model, test_dat
     simple_ranks = np.array(simple_log_likelihoods).argsort().argsort()
     assert np.all(ranks == simple_ranks)
 
-#TODO! For compute_token_log_likelihood we want to make sure that adding more text leads to lower overall value
-#TODO! Do the same for apple's model!
+
+@pytest.mark.parametrize("text, extension", [
+    ('This is', ' a'),
+    ('Let us take a', ' moment'),
+])
+def test_compute_token_log_likelihood(transformer_model, text, extension):
+    """We want to make sure that adding more text leads to lower overall value (unless tokens are merged)"""
+    transformer = transformer_model.model
+    tokenizer = transformer_model.tokenizer
+
+    log_ls = compute_token_log_likelihood(transformer, tokenizer, text)['log_likelihoods']
+    ext_log_ls = compute_token_log_likelihood(transformer, tokenizer, text + extension)['log_likelihoods']
+
+    assert sum(log_ls) > sum(ext_log_ls)
+
+
 #TODO Also test for left-padding (e.g. with apple's model checking if both tokenizers give the same values)

@@ -159,6 +159,7 @@ class SimpleTransformer(Transformer):
     def compute_option_log_likelihoods(
             self,
             items: List[Item],
+            subtract_prompt: bool=True,
             **kwargs,
         ) -> List[float]:
         if self.lazy_loading:
@@ -172,9 +173,12 @@ class SimpleTransformer(Transformer):
         for item in tqdm(items):
             input_texts = [item.prompt + (" " if (not item.prompt.endswith(' ') and not option.startswith(' ')) else "") + option for option in item.options]
 
-            # .rstrip() is to avoid that a whitespace token with low likelihood
-            # is considered here (which could lead to overall positive values in the total!)
-            prompt_log_likelihood = np.sum(compute_token_log_likelihood(transformer=model, tokenizer=tokenizer, text=item.prompt.rstrip(), add_special_tokens=True)['log_likelihoods'])
+            if subtract_prompt:
+                # .rstrip() is to avoid that a whitespace token with low likelihood
+                # is considered here (which could lead to overall positive values in the total!)
+                prompt_log_likelihood = np.sum(compute_token_log_likelihood(transformer=model, tokenizer=tokenizer, text=item.prompt.rstrip(), add_special_tokens=True)['log_likelihoods'])
+            else:
+                prompt_log_likelihood = 0  # dummy with no effect
 
             option_log_likelihoods = []
             for text in input_texts:
