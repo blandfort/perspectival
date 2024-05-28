@@ -159,8 +159,6 @@ class SimpleTransformer(Transformer):
     def compute_option_log_likelihoods(
             self,
             items: List[Item],
-            add_whitespace='conditional',
-            token_level: bool=False,
             **kwargs,
         ) -> List[float]:
         if self.lazy_loading:
@@ -168,18 +166,11 @@ class SimpleTransformer(Transformer):
         else:
             model, tokenizer = self.model, self.tokenizer
 
-        #print(f"Whitespace setting: {add_whitespace}")
-
         log_likelihoods = []
 
         print("Computing option log likelihoods ...")
         for item in tqdm(items):
-            if add_whitespace=='conditional':
-                input_texts = [item.prompt + (" " if (not item.prompt.endswith(' ') and not option.startswith(' ')) else "") + option for option in item.options]
-            elif add_whitespace:
-                input_texts = [item.prompt + " " + option for option in item.options]
-            else:
-                input_texts = [item.prompt + option for option in item.options]
+            input_texts = [item.prompt + (" " if (not item.prompt.endswith(' ') and not option.startswith(' ')) else "") + option for option in item.options]
 
             prompt_log_likelihoods = np.sum(compute_token_log_likelihood(transformer=model, tokenizer=tokenizer, text=item.prompt, add_special_tokens=True)['log_likelihoods'])
 
