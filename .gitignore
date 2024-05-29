@@ -7,3 +7,5 @@ data/*
 .DS_Store*
 *.zip
 .python-version
+.env
+tests/test_data/*
