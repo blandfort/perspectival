@@ -49,22 +49,26 @@ class LogDisagreement(ComparisonFeature):
         log_likelihoods2 = log_likelihoods[1].values
         model_names = [log_likelihoods[0].model, log_likelihoods[1].model]
 
-        # Normalize log likelihoods so that disagreement scores will be in [0, 1]
-        n_log_likelihoods1 = np.array(log_likelihoods1) / np.max(np.abs(log_likelihoods1), axis=1).reshape(-1, 1).repeat(np.array(log_likelihoods1).shape[-1], axis=-1)
-        n_log_likelihoods2 = np.array(log_likelihoods2) / np.max(np.abs(log_likelihoods2), axis=1).reshape(-1, 1).repeat(np.array(log_likelihoods2).shape[-1], axis=-1)
-
         # We want to gather max entries as described in https://stackoverflow.com/a/58098299
         choices1 = np.expand_dims(np.argmax(log_likelihoods1, axis=-1), axis=-1)
         choices2 = np.expand_dims(np.argmax(log_likelihoods2, axis=-1), axis=-1)
 
         # Generalizing to non-boolean case: Take argmax of each model and use these indices
-        model1_selections1 = np.take_along_axis(n_log_likelihoods1, choices1, axis=-1).squeeze()
-        model1_selections2 = np.take_along_axis(n_log_likelihoods1, choices2, axis=-1).squeeze()
-        model2_selections1 = np.take_along_axis(n_log_likelihoods2, choices1, axis=-1).squeeze()
-        model2_selections2 = np.take_along_axis(n_log_likelihoods2, choices2, axis=-1).squeeze()
+        model1_selections1 = np.take_along_axis(log_likelihoods1, choices1, axis=-1).squeeze(axis=-1)
+        model1_selections2 = np.take_along_axis(log_likelihoods1, choices2, axis=-1).squeeze(axis=-1)
+        model2_selections1 = np.take_along_axis(log_likelihoods2, choices1, axis=-1).squeeze(axis=-1)
+        model2_selections2 = np.take_along_axis(log_likelihoods2, choices2, axis=-1).squeeze(axis=-1)
+
+        # Normalize log likelihoods so that disagreement scores will be in [0, 1]
+        # We only want to consider predictions for the relevant options
+        selected_log_likelihoods1 = np.stack((model1_selections1, model1_selections2), axis=-1)
+        selected_log_likelihoods2 = np.stack((model2_selections1, model2_selections2), axis=-1)
+        n_log_likelihoods1 = np.array(selected_log_likelihoods1) / np.max(np.abs(selected_log_likelihoods1), axis=1).reshape(-1, 1).repeat(2, axis=-1)
+        n_log_likelihoods2 = np.array(selected_log_likelihoods2) / np.max(np.abs(selected_log_likelihoods2), axis=1).reshape(-1, 1).repeat(2, axis=-1)
+
 
         # We take square root to make the scores more intuitive
-        log_disagreement = np.sqrt(-1 * (model1_selections1 - model1_selections2) * (model2_selections1 - model2_selections2))
+        log_disagreement = np.sqrt(-1 * (n_log_likelihoods1[:, 0] - n_log_likelihoods2[:, 0]) * (n_log_likelihoods1[:, 1] - n_log_likelihoods2[:, 1]))
         return cls(models=model_names, values=log_disagreement)
 
 
