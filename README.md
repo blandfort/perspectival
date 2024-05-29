@@ -99,7 +99,6 @@ Once you have an Experiment with interesting features, you can
 
 Functionality to add:
 
-- Add analyses based on generation (Note that here the disagreement score enables new analyses, as two models will generate different responses for most prompts!)
 - Adding explanations and evaluate how much of a comparison feature one or several features can explain
 - Feature dependencies: Extending analysis of how features relate to each other, e.g. to compute correlation coefficients between LogDisagreement and scalar input features
 - Extending to architecture-specific comparisons like differences in attention
