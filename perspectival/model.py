@@ -24,6 +24,7 @@ def generate(
         top_p=top_p,
         temperature=temperature,
         max_new_tokens=max_new_tokens,
+        pad_token_id=tokenizer.pad_token_id,
     )
     return tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
