@@ -99,17 +99,16 @@ Once you have an Experiment with interesting features, you can
 
 Functionality to add:
 
+- Add analyses based on generation (Note that here the disagreement score enables new analyses, as two models will generate different responses for most prompts!)
 - Adding explanations and evaluate how much of a comparison feature one or several features can explain
 - Feature dependencies: Extending analysis of how features relate to each other, e.g. to compute correlation coefficients between LogDisagreement and scalar input features
 - Extending to architecture-specific comparisons like differences in attention
-- Add analyses based on generation (Note that here the disagreement score enables new analyses, as two models will generate different responses for most prompts!)
 - For examples, also make it possible to view most similar ones (ideally based on embeddings), to quickly check some intuitions like "Additional structure in the prompt like [header] leads to more disagreement"
 - Compare more than two models: Mostly requires computing different comparison features
 
 Engineering and usability features to add:
 
 - Improve efficiency: Can we use float16 models? Also use batching
-- Normalize log disagreement scores (per item)
 - Further dataset loaders
 - Add linting (adding CICD pipeline)
 - Add further testing
