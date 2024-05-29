@@ -9,6 +9,24 @@ from .interfaces import Model
 from .dataset import Item
 
 
+def generate(
+        transformer,
+        tokenizer,
+        beginning: str,
+        top_p: float=.95,
+        temperature: float=.05,
+        max_new_tokens: int=64,
+    ) -> str:
+    inputs = tokenizer(beginning, return_tensors="pt") #.to("cuda")
+    generated_ids = transformer.generate(
+        **inputs,
+        do_sample=True,
+        top_p=top_p,
+        temperature=temperature,
+        max_new_tokens=max_new_tokens,
+    )
+    return tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+
 def compute_token_log_likelihood(transformer, tokenizer, text: str, add_special_tokens: bool=True) -> dict:
     """Simple but inefficient method to calculate the log likelihood of a given text."""
     # Tokenize the text
@@ -72,6 +90,28 @@ class Transformer(Model):
         model.eval()  # Set the model to evaluation mode
 
         return model, tokenizer
+
+    def compute_continuations(
+            self,
+            items: List[Item],
+            **kwargs,
+        ) -> List[str]:
+        """Generate continuations of the prompts of all items"""
+        if self.lazy_loading:
+            model, tokenizer = self._load_model()
+        else:
+            model, tokenizer = self.model, self.tokenizer
+
+        continuations = []
+
+        print("Computing text continuations ...")
+        for item in tqdm(items):
+            text = generate(transformer=model, tokenizer=tokenizer, beginning=item.prompt, **kwargs)
+            # Only consider the part after the given text
+            text = text[len(item.prompt):]
+
+            continuations.append(text)
+        return continuations
 
     def compute_option_log_likelihoods(
             self,

@@ -31,6 +31,14 @@ class ModelChoices(ModelFeature):
         return cls(model=log_likelihoods.model, values=model_choices)
 
 
+class TextContinuation(ModelFeature):
+
+    @classmethod
+    def compute(cls, dataset: Dataset, model: Model, **kwargs):
+        continuations = model.compute_continuations(items=dataset.items, **kwargs)
+        return cls(model=model.name, values=continuations)
+
+
 class PredictionCorrectness(ModelFeature):
 
     @classmethod
