@@ -20,6 +20,9 @@ class Feature(metaclass=abc.ABCMeta):
 
     name = property(fget=_get_name)
 
+    def to_dict(self):
+        return {'name': self.name, 'values': self.values}
+
 
 class ItemFeature(Feature):
     """Class to store item-based features"""
@@ -41,6 +44,8 @@ class ModelFeature(Feature):
     def compute(cls):
         raise NotImplementedError()
 
+    def to_dict(self):
+        return {'name': self.name, 'values': self.values, 'model': self.model}
 
 class ComparisonFeature(Feature):
     models: Tuple[str, str]
@@ -57,6 +62,8 @@ class ComparisonFeature(Feature):
     def compute(cls):
         raise NotImplementedError()
 
+    def to_dict(self):
+        return {'name': self.name, 'values': self.values, 'models': self.models}
 
 class Model(metaclass=abc.ABCMeta):
     name: str

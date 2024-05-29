@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 from typing import Tuple
 
 from .interfaces import ItemFeature, ModelFeature, ComparisonFeature, Model
@@ -68,3 +69,14 @@ class BinaryDisagreement(ComparisonFeature):
     def compute(cls, log_disagreement: LogDisagreement):
         values = log_disagreement.values>0
         return cls(models=log_disagreement.models, values=values)
+
+
+def feature_from_dict(d):
+    """Utility function to load a feature based on a dictionary"""
+    # Use the name to identify the class
+    cls_name = d['name']
+    cls = getattr(sys.modules[__name__], cls_name)
+    assert issubclass(cls, (ItemFeature, ModelFeature, ComparisonFeature))
+
+    # The remaining arguments are contents of the feature
+    return cls(**{key: d[key] for key in d if key!='name'})

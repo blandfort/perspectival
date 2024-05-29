@@ -2,8 +2,8 @@ from typing import List, Union, Dict, Tuple, Optional, Type
 import numpy as np
 import pandas as pd
 import scipy.stats as st
-from joblib import dump, load
 from pathlib import Path
+from joblib import dump, load
 
 from .interfaces import Feature, ItemFeature, ModelFeature, ComparisonFeature, Model
 from .dataset import Dataset
@@ -184,15 +184,6 @@ class Experiment:
 
         return self.select(indices=selected_indices, name=name)
 
-    def save(self, data_dir: Path):
-        path = data_dir / Path(self.name + '.joblib')
-        dump(self, path)
-
-    @classmethod
-    def load(cls, data_dir: Path, name: str):
-        path = data_dir / Path(name + '.joblib')
-        return load(path)
-
     def display_item(
             self,
             item_ix: int,
@@ -267,3 +258,39 @@ class Experiment:
         data.append(make_data_element(input_value='OVERALL', output_values=values))
 
         return pd.DataFrame(data)
+
+    def to_dict(self):
+        d = {'name': self.name}
+        d['dataset'] = self.dataset.to_dict()
+        d['item_features'] = {name: self.item_features[name].to_dict() for name in self.item_features}
+        d['model_features'] = {name: {model: self.model_features[name][model].to_dict()
+            for model in self.model_features[name]}
+                for name in self.model_features}
+        d['comparison_features'] = {name: {models: self.comparison_features[name][models].to_dict()
+            for models in self.comparison_features[name]}
+                for name in self.comparison_features}
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        args = {'name': d['name'], 'dataset': Dataset.from_dict(d['dataset'])}
+        args['item_features'] = {name: feature_from_dict(d['item_features'][name])
+                for name in d['item_features']}
+        args['model_features'] = {name: {model: feature_from_dict(d['model_features'][name][model])
+            for model in d['model_features'][name]}
+                for name in d['model_features']}
+        args['comparison_features'] = {name: {models: feature_from_dict(d['comparison_features'][name][models])
+            for models in d['comparison_features'][name]}
+                for name in d['comparison_features']}
+        return cls(**args)
+
+    def save(self, data_dir: Path):
+        path = data_dir / Path(self.name + '.joblib')
+        data = self.to_dict()
+        dump(data, path)
+
+    @classmethod
+    def load(cls, data_dir: Path, name: str):
+        path = data_dir / Path(name + '.joblib')
+        return cls.from_dict(load(path))
+

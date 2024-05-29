@@ -24,3 +24,12 @@ class Dataset(BaseModel):
 
         return self.__class__(name=name, items=tuple(items))
 
+    def to_dict(self):
+        d = {'name': self.name, 'items': [dict(item) for item in self.items]}
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        assert 'name' in d and 'items' in d
+
+        return cls(name=d['name'], items=[Item(**item) for item in d['items']])

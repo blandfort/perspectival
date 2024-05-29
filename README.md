@@ -108,8 +108,7 @@ Functionality to add:
 
 Engineering and usability features to add:
 
-- Make saving and loading experiments more robust (changes to Experiment class can lead loading of previous experiments to fail)
-- Improve efficiency: Can we float16 models? Also use batching
+- Improve efficiency: Can we use float16 models? Also use batching
 - Normalize log disagreement scores (per item)
 - Further dataset loaders
 - Add linting (adding CICD pipeline)
