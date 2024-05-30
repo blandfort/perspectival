@@ -13,14 +13,15 @@ def generate(
         transformer,
         tokenizer,
         beginning: str,
-        top_p: float=.95,
-        temperature: float=.05,
+        temperature: float=0,
         max_new_tokens: int=64,
+        do_sample=False,
+        top_p: Optional[float]=None,
     ) -> str:
     inputs = tokenizer(beginning, return_tensors="pt") #.to("cuda")
     generated_ids = transformer.generate(
         **inputs,
-        do_sample=True,
+        do_sample=do_sample,
         top_p=top_p,
         temperature=temperature,
         max_new_tokens=max_new_tokens,
