@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from typing import List
+from typing import List, Optional
 from tqdm import tqdm
 
 from .interfaces import Model
@@ -35,11 +35,6 @@ def compute_token_log_likelihood(transformer, tokenizer, text: str, add_special_
 
     token_indices = encoded_text.input_ids[0][:]
 
-    # Verify that the tokenization did what we expected
-    # (This part should probably be done nby tokenizer.batch_decode)
-    #reconstructed_text = ''.join(tokenizer.convert_ids_to_tokens(token_indices)).replace('Ġ', ' ').replace('Ċ', '\n').replace('_', ' ')
-    #assert reconstructed_text==text.replace('_', ' '), f"These should be the same but aren't:\n{text}\n{reconstructed_text}"
-
     # Get logits from the model at every position before EOS
     with torch.no_grad():
         logits = transformer(**encoded_text).logits[0]
@@ -69,22 +64,28 @@ class Transformer(Model):
             lazy_loading: bool=True,
             model_kwargs: dict={},
             tokenizer_kwargs: dict={},
+            name: Optional[str]=None,
         ):
-        self.name = model_name
+        self.model_name = model_name
         self.model_kwargs = model_kwargs
         self.tokenizer_kwargs = tokenizer_kwargs
         self.lazy_loading = lazy_loading
+
+        if name is not None:
+            self.name = name
+        else:
+            self.name = model_name
 
         if not self.lazy_loading:
             self.model, self.tokenizer = self._load_model()
 
     def _load_model(self):
-        model = AutoModelForCausalLM.from_pretrained(self.name, **self.model_kwargs)
-        if self.name.startswith('apple/OpenELM'):
+        model = AutoModelForCausalLM.from_pretrained(self.model_name, **self.model_kwargs)
+        if self.model_name.startswith('apple/OpenELM'):
             #tokenizer_name = 'NousResearch/Llama-2-7b-hf'
             tokenizer_name = 'meta-llama/Llama-2-7b-hf'
         else:
-            tokenizer_name = self.name
+            tokenizer_name = self.model_name
         tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, **self.tokenizer_kwargs)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
@@ -124,11 +125,6 @@ class Transformer(Model):
         else:
             model, tokenizer = self.model, self.tokenizer
 
-        def compute_logits(encoded_texts):
-            with torch.no_grad():
-                outputs = model(**encoded_texts, **kwargs)
-                return outputs.logits
-
         # Initialize return list
         log_likelihoods = []
 
@@ -140,7 +136,8 @@ class Transformer(Model):
             encoded_inputs = tokenizer(input_texts, padding=True, truncation=True, return_tensors='pt', add_special_tokens=True)
 
             # Get logits from the model
-            logits = compute_logits(encoded_inputs)
+            with torch.no_grad():
+                logits = model(**encoded_inputs, **kwargs).logits
 
             # Ignore the log probs at the beginning
             prompt_length = len(tokenizer(item.prompt, add_special_tokens=False)['input_ids']) - 1
