@@ -144,6 +144,17 @@ class Experiment:
         self.register_feature(log_disagreement)
         self.register_feature(BinaryDisagreement.compute(log_disagreement))
 
+    def compute_continuation_disagreement(self, models: Tuple[Model, Model], **kwargs):
+        assert len(models)==2
+
+        tc1 = TextContinuation.compute(dataset=self.dataset, model=models[0], **kwargs)
+        tc2 = TextContinuation.compute(dataset=self.dataset, model=models[1], **kwargs)
+        self.register_feature(tc1)
+        self.register_feature(tc2)
+
+        cd = ContinuationDisagreement.compute(dataset=self.dataset, continuations=[tc1, tc2], models=models)
+        self.register_feature(cd)
+
     def sample(
             self,
             num: Optional[int]=None,
