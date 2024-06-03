@@ -44,9 +44,18 @@ def inspect_texts(
 ):
     assert len(models)==2
 
-    encoded_texts1 = tokenize_texts(models[0].tokenizer, texts)
-    encoded_texts2 = tokenize_texts(models[1].tokenizer, texts)
-    logits = [get_logits(models[0].model, encoded_texts1), get_logits(models[1].model, encoded_texts2)]
+    if models[0].lazy_loading:
+        model1, tokenizer1 = models[0]._load_model()
+    else:
+        model1, tokenizer1 = models[0].model, models[0].tokenizer
+    if models[1].lazy_loading:
+        model2, tokenizer2 = models[1]._load_model()
+    else:
+        model2, tokenizer2 = models[1].model, models[1].tokenizer
+
+    encoded_texts1 = tokenize_texts(tokenizer1, texts)
+    encoded_texts2 = tokenize_texts(tokenizer2, texts)
+    logits = [get_logits(model1, encoded_texts1), get_logits(model2, encoded_texts2)]
 
     scores1 = []
     scores2 = []
@@ -56,10 +65,10 @@ def inspect_texts(
 
     for sequence_id in range(len(texts)):
         s_token_ids = encoded_texts1[sequence_id].ids
-        s_tokens = models[0].tokenizer.batch_decode(s_token_ids)
+        s_tokens = tokenizer1.batch_decode(s_token_ids)
 
         s_token_ids2 = encoded_texts2[sequence_id].ids
-        s_tokens2 = models[1].tokenizer.batch_decode(s_token_ids2)
+        s_tokens2 = tokenizer2.batch_decode(s_token_ids2)
 
         sequence_scores1 = []
         sequence_scores2 = []
@@ -69,7 +78,7 @@ def inspect_texts(
             assert next_token==next_token2, "This functionality doesn't work for unaligned tokenizations!"
 
             # Setting values to 0 for padding tokens to avoid these values affecting scaling
-            if next_token_id==models[0].tokenizer.pad_token_id:
+            if next_token_id==tokenizer1.pad_token_id:
                 sequence_scores1.append(0)
                 sequence_scores2.append(0)
                 sequence_diffs.append(0)
@@ -110,13 +119,13 @@ def inspect_texts(
         for j, (token, token_id, scaled_diff, diff, score1, score2) in enumerate(zip(tokens[sequence_id][1:], token_ids[sequence_id][1:],
                                                                            scaled_diffs[sequence_id], diffs[sequence_id],
                                                                            scores1[sequence_id], scores2[sequence_id])):
-            if token_id==models[0].tokenizer.pad_token_id:
+            if token_id==tokenizer1.pad_token_id:
                 continue
 
             color = color_map(scaled_diff)[:3]
             hex_color = matplotlib.colors.rgb2hex(color)
-            top_tokens1 = get_top_k_tokens(logits[0][sequence_id][j], models[0].tokenizer, top_k, mode)
-            top_tokens2 = get_top_k_tokens(logits[1][sequence_id][j], models[1].tokenizer, top_k, mode)
+            top_tokens1 = get_top_k_tokens(logits[0][sequence_id][j], tokenizer1, top_k, mode)
+            top_tokens2 = get_top_k_tokens(logits[1][sequence_id][j], tokenizer2, top_k, mode)
 
             mouseover_text = f"Difference for actual token ({token}): {diff:.4f} ({models[0].name}: {score1:.4f}, {models[1].name}: {score2:.4f})"
             mouseover_text += f"<br />{models[0].name} Top-{top_k}: {top_tokens1}<br />{models[1].name} Top-{top_k}: {top_tokens2}"
