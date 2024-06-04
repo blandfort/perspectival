@@ -60,18 +60,19 @@ class Experiment:
         elif feature_name in self.model_features:
             if model is None:
                 raise ValueError("Need to specify 'model' for model-based features!")
-            if model in self.model_features[feature_name]:
-                return self.model_features[feature_name][model]
-            else:
-                return None
+            return self.model_features[feature_name].get(model, None)
         elif feature_name in self.comparison_features:
+            relevant_features = self.comparison_features[feature_name]
+
             if models is None:
-                raise ValueError("Need to specify 'models' for comparative features!")
-            sorted_models = tuple(sorted(list(models)))
-            if sorted_models in self.comparison_features[feature_name]:
-                return self.comparison_features[feature_name][sorted_models]
+                if len(relevant_features)>1:
+                    raise ValueError("Need to specify 'models' for comparative features which exist for several pairs of models!")
+                elif len(relevant_features)==1:
+                    return list(relevant_features.values())[0]
             else:
-                return None
+                sorted_models = tuple(sorted(list(models)))
+                return self.comparison_features[feature_name].get(sorted_models, None)
+            return None
         else:
             return None
 
@@ -240,9 +241,9 @@ class Experiment:
             input_feature: str,
             output_feature: str='BinaryDisagreement',
             p_value: float=.95,
+            models: Optional[Tuple[str, str]]=None,
         ):
-        #TODO in case there are several such features we need to show a warning at least
-        values = self.get_features(output_feature)[0].values
+        values = self.get_feature(output_feature, models=models).values
         input_values = self.get_feature(input_feature).values
 
         data = []
@@ -264,7 +265,7 @@ class Experiment:
             mask = input_values==v
             value_selection = self.sample(mask=mask)
 
-            selection_values = value_selection.get_features(output_feature)[0].values  #TODO see above
+            selection_values = value_selection.get_feature(output_feature, models=models).values
             data.append(make_data_element(input_value=v, output_values=selection_values))
         data.append(make_data_element(input_value='OVERALL', output_values=values))
 
