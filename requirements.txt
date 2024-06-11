@@ -1,5 +1,4 @@
 jupyter
-dotenv
 numpy
 scipy
 matplotlib
