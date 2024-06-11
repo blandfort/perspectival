@@ -9,6 +9,9 @@ from .interfaces import Model
 from .dataset import Item
 
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 def generate(
         transformer,
         tokenizer,
@@ -18,7 +21,7 @@ def generate(
         do_sample=False,
         top_p: Optional[float]=None,
     ) -> str:
-    inputs = tokenizer(beginning, return_tensors="pt") #.to("cuda")
+    inputs = tokenizer(beginning, return_tensors="pt").to(device)
     generated_ids = transformer.generate(
         **inputs,
         do_sample=do_sample,
@@ -82,6 +85,7 @@ class Transformer(Model):
 
     def _load_model(self):
         model = AutoModelForCausalLM.from_pretrained(self.model_name, **self.model_kwargs)
+        model.to(device)
         if self.model_name.startswith('apple/OpenELM'):
             #tokenizer_name = 'NousResearch/Llama-2-7b-hf'
             tokenizer_name = 'meta-llama/Llama-2-7b-hf'
@@ -134,7 +138,7 @@ class Transformer(Model):
             input_texts = [item.prompt + (" " if (not item.prompt.endswith(' ') and not option.startswith(' ')) else "") + option for option in item.options]
 
             # Tokenize the combined texts
-            encoded_inputs = tokenizer(input_texts, padding=True, truncation=True, return_tensors='pt', add_special_tokens=True)
+            encoded_inputs = tokenizer(input_texts, padding=True, truncation=True, return_tensors='pt', add_special_tokens=True).to(device)
 
             # Get logits from the model
             with torch.no_grad():
@@ -157,7 +161,7 @@ class Transformer(Model):
                 token_log_probs = log_probs.gather(2, input_ids.unsqueeze(-1)).squeeze(-1)
 
                 # Set irrelevant entries at the end (from padding) to zero
-                masked_log_probs = (token_log_probs * attention_mask).detach().numpy()
+                masked_log_probs = (token_log_probs * attention_mask).detach().cpu().numpy()
 
             else:
                 prompt_length +=1  # BOS token
@@ -174,11 +178,11 @@ class Transformer(Model):
                 attention_mask = attention_mask[:, :-1]
 
                 token_log_probs = log_probs.gather(2, input_ids.unsqueeze(-1)).squeeze(-1)
-                masked_log_probs = (token_log_probs * attention_mask).detach().numpy()
+                masked_log_probs = (token_log_probs * attention_mask).detach().cpu().numpy()
 
                 # Note: Setting offsets to 0 leads to computing log likelihoods
                 # over the whole sequence including the prompt (useful for debugging)
-                offsets = np.argmax(attention_mask, axis=1) + prompt_length
+                offsets = np.argmax(attention_mask.detach().cpu().numpy(), axis=1) + prompt_length
                 masked_log_probs = [lls[offset:] for lls, offset in zip(masked_log_probs, offsets)]
 
                 #TODO Apply padding to have same format as for right padding?
@@ -232,4 +236,3 @@ class SimpleTransformer(Transformer):
             log_likelihoods.append(option_log_likelihoods)
 
         return log_likelihoods
-
