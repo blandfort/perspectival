@@ -15,13 +15,33 @@ class GroundTruth(ItemFeature):
     values: Tuple[int]
 
 
+class NamedFeature(ItemFeature):
+    name = None
+
+    def __init__(self, values: np.array, name: str):
+        super().__init__(values)
+        self.name = name
+
+    def select(self, indices):
+        selected_values = self.values[indices]
+        return self.__class__(values=selected_values, name=self.name)
+
+
 class OptionLogLikelihood(ModelFeature):
 
     @classmethod
     def compute(cls, dataset: Dataset, model: Model, **kwargs):
         log_likelihoods = model.compute_option_log_likelihoods(items=dataset.items, **kwargs)
 
-        return cls(model=model.name, values=log_likelihoods)
+        # In case different items have different numbers of options, we need padding
+        # Determine the maximum length of the inner lists
+        max_length = max(len(inner_list) for inner_list in log_likelihoods)
+
+        # Pad the inner lists with np.nan to make them all the same length
+        padding_value = -1e9
+        padded_log_likelihoods = np.array([inner_list + [padding_value] * (max_length - len(inner_list)) for inner_list in log_likelihoods])
+
+        return cls(model=model.name, values=padded_log_likelihoods)
 
 
 class ModelChoices(ModelFeature):
@@ -46,6 +66,22 @@ class PredictionCorrectness(ModelFeature):
     def compute(cls, dataset: Dataset, model_choices: ModelChoices, ground_truth: GroundTruth):
         correctness = (model_choices.values==ground_truth.values)*1.
         return cls(model=model_choices.model, values=correctness)
+
+
+class NamedModelFeature(ModelFeature):
+    name = None
+
+    def __init__(self, values: np.array, model: str, name: str):
+        super().__init__(values, model)
+        self.name = name
+
+    def select(self, indices):
+        selected_values = self.values[indices]
+        return self.__class__(values=selected_values, model=self.model, name=self.name)
+
+    @classmethod
+    def compute(cls):
+        raise NotImplementedError("This feature should be instantiated by passing values to __init__!")
 
 
 def compute_disagreement_score(log_likelihoods: Tuple[OptionLogLikelihood, OptionLogLikelihood]):
@@ -119,8 +155,16 @@ def feature_from_dict(d):
     """Utility function to load a feature based on a dictionary"""
     # Use the name to identify the class
     cls_name = d['name']
-    cls = getattr(sys.modules[__name__], cls_name)
-    assert issubclass(cls, (ItemFeature, ModelFeature, ComparisonFeature))
+    cls = getattr(sys.modules[__name__], cls_name, None)
+    if cls is not None:
+        assert issubclass(cls, (ItemFeature, ModelFeature, ComparisonFeature))
 
-    # The remaining arguments are contents of the feature
-    return cls(**{key: d[key] for key in d if key!='name'})
+        # The remaining arguments are contents of the feature
+        return cls(**{key: d[key] for key in d if key!='name'})
+    else:
+        if 'model'  in d:
+            cls = NamedModelFeature
+        else:
+            cls = NamedFeature
+
+        return cls(**{key: d[key] for key in d})

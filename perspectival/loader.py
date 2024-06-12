@@ -6,7 +6,7 @@ from pathlib import Path
 from datasets import load_dataset
 from typing import Optional, Tuple, List
 
-from .features import Category, GroundTruth
+from .features import Category, GroundTruth, NamedFeature
 from .dataset import Dataset, Item
 from .interfaces import Feature
 
@@ -88,7 +88,9 @@ def load_rotten_tomatoes(split: str = 'train') -> Tuple[Dataset, List[Feature]]:
     return dataset, features
 
 
-def parse_anthropic_item(text):
+def parse_anthropic_item(raw_item: dict):
+    text = raw_item['question']
+
     # Extract the question if present, otherwise use a default message
     question_match = re.search(r"(Question: )?(.*?)(?=\nChoices:)", text, re.DOTALL)
     question = question_match.group(2) #if question_match else "No question provided."
@@ -99,7 +101,15 @@ def parse_anthropic_item(text):
     choice_letters = [choice[0] for choice in choice_list]
     assert choice_letters==sorted(choice_letters)
 
-    return question, [choice[1] for choice in choice_list]
+    # Get the choices matching and not matching behavior
+    matching_behavior = raw_item['answer_matching_behavior'].strip(" ()")
+    assert matching_behavior in choice_letters
+    choice_matching_behavior = [ix for ix, choice in enumerate(choice_list) if choice[0]==matching_behavior][0]
+    not_matching_behavior = raw_item['answer_not_matching_behavior'].strip(" ()")
+    assert not_matching_behavior in choice_letters
+    choice_not_matching_behavior = [ix for ix, choice in enumerate(choice_list) if choice[0]==not_matching_behavior][0]
+
+    return question, [choice[1] for choice in choice_list], choice_matching_behavior, choice_not_matching_behavior
 
 def load_anthropic_eval_data(repo_path: Path, dataset: str,
         subdir: Optional[str]=None,
@@ -109,8 +119,8 @@ def load_anthropic_eval_data(repo_path: Path, dataset: str,
     If repo_path is not an existing directory, this function will attempt
     to download the repository to that path.
 
-    Note that we use 'correct_index' to refer to options that don't match the
-    corresponding behavior."""
+    For dataset details, refer to https://github.com/anthropics/evals.
+    """
     if not os.path.isdir(repo_path):
         print(f"Downloading repo to {repo_path}...")
         os.system(f"git clone https://github.com/anthropics/evals {repo_path}")
@@ -121,6 +131,8 @@ def load_anthropic_eval_data(repo_path: Path, dataset: str,
 
         items = []
         category_features = []
+        matching_behavior = []
+        not_matching_behavior = []
 
         dir_path = repo_path / Path(dataset) / Path(subdir)
         for path in os.listdir(dir_path):
@@ -128,31 +140,27 @@ def load_anthropic_eval_data(repo_path: Path, dataset: str,
             if path.endswith('.jsonl'):
                 category = path.rsplit('.', 1)[0]
                 raw_items = [json.loads(line) for line in open(dir_path / Path(path), 'r')]
-                #print(category, len(raw_items))
 
                 for ix, raw_item in enumerate(raw_items):
                     item_id = f"{dataset}/{subdir}/{category}/{ix}"
 
-                    # Old version
-                    #if raw_item['question'].lower().startswith('question'):
-                    #    prompt = raw_item['question']
-                    #else:
-                    #    prompt = f"Question: {raw_item['question']}\n\nAnswer:"
-                    #options = ["(A)", "(B)"]  # Note that we add a whitespace in processing
-                    #correct_index = options.index(raw_item['answer_not_matching_behavior'].strip())
-                    question, options = parse_anthropic_item(raw_item['question'])
-                    prompt = f"Question: {question}\nAnswer:"
-
-                    if len(options)>2:
-                        # For now skip options with more than two choices
-                        # as it makes correct_index meaningless
-                        continue
+                    question, options, mb, nmb = parse_anthropic_item(raw_item)
+                    # NOTE: Our format is slightly different from the one Anthropic
+                    # mentions in the repo
+                    # (See https://github.com/anthropics/evals/tree/main/advanced-ai-risk)
+                    prompt = f"Human: {question}\nAssistant:"
 
                     items.append(Item(prompt=prompt, options=options,
                         id=item_id))
                     category_features.append(category)
+                    matching_behavior.append(mb)
+                    not_matching_behavior.append(nmb)
         dataset = Dataset(name=f'anthropic evals - {dataset} - {subdir}', items=items)
-        features = [Category(values=category_features)]
+        features = [
+            Category(values=category_features),
+            NamedFeature(values=matching_behavior, name='Choice_matching_behavior'),
+            NamedFeature(values=not_matching_behavior, name='Choice_not_matching_behavior'),
+        ]
         return dataset, features
     else:
         raise NotImplementedError("Given dataset either doesn't exist or is not implemented yet!")

@@ -241,10 +241,11 @@ class Experiment:
             input_feature: str,
             output_feature: str='BinaryDisagreement',
             p_value: float=.95,
+            model: Optional[str]=None,
             models: Optional[Tuple[str, str]]=None,
         ):
-        values = self.get_feature(output_feature, models=models).values
-        input_values = self.get_feature(input_feature).values
+        values = self.get_feature(output_feature, model=model, models=models).values
+        input_values = self.get_feature(input_feature, model=model, models=models).values
 
         data = []
 
@@ -265,7 +266,7 @@ class Experiment:
             mask = input_values==v
             value_selection = self.sample(mask=mask)
 
-            selection_values = value_selection.get_feature(output_feature, models=models).values
+            selection_values = value_selection.get_feature(output_feature, model=model, models=models).values
             data.append(make_data_element(input_value=v, output_values=selection_values))
         data.append(make_data_element(input_value='OVERALL', output_values=values))
 
