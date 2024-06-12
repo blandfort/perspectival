@@ -264,7 +264,7 @@ class Experiment:
             output_feature_vals = f"{np.mean(output_values):.2f} ({conf_interval[0]:.2f}-{conf_interval[1]:.2f})" if conf_interval is not None else f"{np.mean(output_values):.2f}"
 
             d = {
-                input_feature: input_value,
+                input_feature if type(input_feature)==str else input_feature['name']: input_value,
                 '#items': len(output_values),
                 output_feature if type(output_feature)==str else output_feature['name']: output_feature_vals,
             }
@@ -275,7 +275,7 @@ class Experiment:
             value_selection = self.sample(mask=mask)
 
             if type(output_feature)==str:
-                selection_values = value_selection.get_feature(output_feature, model=model, models=models).values
+                selection_values = value_selection.get_feature(output_feature).values
             else:
                 selection_values = value_selection.get_feature(**output_feature).values
 
