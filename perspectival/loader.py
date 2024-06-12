@@ -106,11 +106,16 @@ def load_anthropic_eval_data(repo_path: Path, dataset: str,
     ) -> Tuple[Dataset, List[Feature]]:
     """Load the advanced AI risk dataset from Anthropic
 
-    The dataset needs to be downloaded from https://github.com/anthropics/evals
-    first.
+    If repo_path is not an existing directory, this function will attempt
+    to download the repository to that path.
 
     Note that we use 'correct_index' to refer to options that don't match the
     corresponding behavior."""
+    if not os.path.isdir(repo_path):
+        print(f"Downloading repo to {repo_path}...")
+        os.system(f"git clone https://github.com/anthropics/evals {repo_path}")
+        print("Finished downloading.")
+
     if dataset=='advanced-ai-risk':
         assert subdir in ['human_generated_evals', 'lm_generated_evals', 'prompts_for_few_shot_generation']
 
