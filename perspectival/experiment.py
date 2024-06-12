@@ -51,18 +51,18 @@ class Experiment:
             raise NotImplementedError("Feature registration is only implemented for item-based, model-based and comparative features!")
 
     def get_feature(self,
-            feature_name: str,
+            name: str,
             model: Optional[str]=None,
             models: Optional[Tuple[str, str]]=None,
         ) -> Feature:
-        if feature_name in self.item_features:
-            return self.item_features[feature_name]
-        elif feature_name in self.model_features:
+        if name in self.item_features:
+            return self.item_features[name]
+        elif name in self.model_features:
             if model is None:
                 raise ValueError("Need to specify 'model' for model-based features!")
-            return self.model_features[feature_name].get(model, None)
-        elif feature_name in self.comparison_features:
-            relevant_features = self.comparison_features[feature_name]
+            return self.model_features[name].get(model, None)
+        elif name in self.comparison_features:
+            relevant_features = self.comparison_features[name]
 
             if models is None:
                 if len(relevant_features)>1:
@@ -71,20 +71,20 @@ class Experiment:
                     return list(relevant_features.values())[0]
             else:
                 sorted_models = tuple(sorted(list(models)))
-                return self.comparison_features[feature_name].get(sorted_models, None)
+                return self.comparison_features[name].get(sorted_models, None)
             return None
         else:
             return None
 
-    def get_features(self, feature_name: str) -> List[Feature]:
+    def get_features(self, name: str) -> List[Feature]:
         features = []
 
-        if feature_name in self.item_features:
-            features.append(self.item_features[feature_name])
-        if feature_name in self.model_features:
-            features.extend(self.model_features[feature_name].values())
-        if feature_name in self.comparison_features:
-            features.extend(self.comparison_features[feature_name].values())
+        if name in self.item_features:
+            features.append(self.item_features[name])
+        if name in self.model_features:
+            features.extend(self.model_features[name].values())
+        if name in self.comparison_features:
+            features.extend(self.comparison_features[name].values())
 
         return features
 
@@ -238,14 +238,20 @@ class Experiment:
 
     def feature_dependency_table(
             self,
-            input_feature: str,
-            output_feature: str='BinaryDisagreement',
+            input_feature: Union[str, dict],
+            output_feature: Union[str, dict]='BinaryDisagreement',
             p_value: float=.95,
-            model: Optional[str]=None,
-            models: Optional[Tuple[str, str]]=None,
         ):
-        values = self.get_feature(output_feature, model=model, models=models).values
-        input_values = self.get_feature(input_feature, model=model, models=models).values
+        """Create a table showing average values of `output_feature` for different
+        values of `input_feature`.
+
+        To select features, you can either pass the name as string, or a
+        dictionary with keyword arguments (to be passed to `.get_feature()`).
+        """
+        if type(input_feature)==str:
+            input_values = self.get_feature(input_feature).values
+        else:
+            input_values = self.get_feature(**input_feature).values
 
         data = []
 
@@ -254,11 +260,13 @@ class Experiment:
                 conf_interval = None
             else:
                 conf_interval = st.t.interval(p_value, len(output_values)-1, loc=np.mean(output_values), scale=st.sem(output_values))
+
+            output_feature_vals = f"{np.mean(output_values):.2f} ({conf_interval[0]:.2f}-{conf_interval[1]:.2f})" if conf_interval is not None else f"{np.mean(output_values):.2f}"
+
             d = {
                 input_feature: input_value,
                 '#items': len(output_values),
-                output_feature: f"{np.mean(output_values):.2f} ({conf_interval[0]:.2f}-{conf_interval[1]:.2f})"
-                    if conf_interval is not None else f"{np.mean(output_values):.2f}",
+                output_feature if type(output_feature)==str else output_feature['name']: output_feature_vals,
             }
             return d
 
@@ -266,8 +274,18 @@ class Experiment:
             mask = input_values==v
             value_selection = self.sample(mask=mask)
 
-            selection_values = value_selection.get_feature(output_feature, model=model, models=models).values
+            if type(output_feature)==str:
+                selection_values = value_selection.get_feature(output_feature, model=model, models=models).values
+            else:
+                selection_values = value_selection.get_feature(**output_feature).values
+
             data.append(make_data_element(input_value=v, output_values=selection_values))
+
+        if type(output_feature)==str:
+            values = self.get_feature(output_feature).values
+        else:
+            values = self.get_feature(**output_feature).values
+
         data.append(make_data_element(input_value='OVERALL', output_values=values))
 
         return pd.DataFrame(data)
