@@ -1,6 +1,6 @@
 import abc
-import numpy as np
 from typing import Tuple, Any, List
+import numpy as np
 
 from .dataset import Item
 
@@ -21,12 +21,11 @@ class Feature(metaclass=abc.ABCMeta):
     name = property(fget=_get_name)
 
     def to_dict(self):
-        return {'name': self.name, 'values': self.values}
+        return {"name": self.name, "values": self.values}
 
 
 class ItemFeature(Feature):
     """Class to store item-based features"""
-    pass
 
 
 class ModelFeature(Feature):
@@ -40,12 +39,14 @@ class ModelFeature(Feature):
         selected_values = self.values[indices]
         return self.__class__(values=selected_values, model=self.model)
 
+    @classmethod
     @abc.abstractmethod
     def compute(cls):
         raise NotImplementedError()
 
     def to_dict(self):
-        return {'name': self.name, 'values': self.values, 'model': self.model}
+        return {"name": self.name, "values": self.values, "model": self.model}
+
 
 class ComparisonFeature(Feature):
     models: Tuple[str, str]
@@ -58,12 +59,14 @@ class ComparisonFeature(Feature):
         selected_values = self.values[indices]
         return self.__class__(values=selected_values, models=self.models)
 
+    @classmethod
     @abc.abstractmethod
     def compute(cls):
         raise NotImplementedError()
 
     def to_dict(self):
-        return {'name': self.name, 'values': self.values, 'models': self.models}
+        return {"name": self.name, "values": self.values, "models": self.models}
+
 
 class Model(metaclass=abc.ABCMeta):
     name: str

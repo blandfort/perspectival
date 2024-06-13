@@ -1,0 +1,24 @@
+repos:
+  - repo: https://github.com/pre-commit/mirrors-pylint
+    rev: v3.0.0a5  # Specify the Pylint version you want to use
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: bash -c 'source venv/bin/activate && pylint perspectival tests'
+        language: system
+        types: [python]
+
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        args: ["--line-length=88"]
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        types: [python]
+        pass_filenames: false  # Avoid passing file names to pytest

@@ -1,0 +1,32 @@
+[MASTER]
+ignore=CVS
+persistent=yes
+
+[MESSAGES CONTROL]
+disable=C0111,  # Missing docstring
+
+[REPORTS]
+output-format=colorized
+reports=no
+
+[FORMAT]
+max-line-length=88
+
+[BASIC]
+good-names=i,j,k,ex,Run,_
+
+[SIMILARITIES]
+min-similarity-lines=4
+
+[DESIGN]
+max-args=10
+max-locals=50
+max-returns=6
+max-branches=12
+max-statements=50
+max-parents=7
+max-attributes=7
+max-public-methods=20
+
+[TYPECHECK]
+generated-members=numpy.*,torch.*,transformers.*

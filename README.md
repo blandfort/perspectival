@@ -116,6 +116,14 @@ So far, I successfully ran experiments on a pod from RunPod. Some notes you migh
   - In case you want HuggingFace models to persist after pausing the pod, set the environment variable `HF_HOME` to a path within `/workspace`
 
 
+## Development
+
+To make sure that your changes comply to best practices, set up pre-commit hooks:
+
+- Install extra requirements (see [setup.py](setup.py))
+- Install pre-commit hooks: `pre-commit install`
+
+
 ## Plans
 
 TODO The most important functionality is already there. Create issues for the points below

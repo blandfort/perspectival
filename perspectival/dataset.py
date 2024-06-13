@@ -1,5 +1,4 @@
-# Functions to load datasets for analysis
-from typing import List, Tuple, Union, Any, Dict
+from typing import List, Tuple, Union
 from pydantic import BaseModel
 
 
@@ -11,6 +10,7 @@ class Item(BaseModel):
 
 class Dataset(BaseModel):
     """Class to handle datasets"""
+
     name: str
     items: Tuple[Item, ...]
 
@@ -25,11 +25,11 @@ class Dataset(BaseModel):
         return self.__class__(name=name, items=tuple(items))
 
     def to_dict(self):
-        d = {'name': self.name, 'items': [dict(item) for item in self.items]}
+        d = {"name": self.name, "items": [dict(item) for item in self.items]}
         return d
 
     @classmethod
     def from_dict(cls, d):
-        assert 'name' in d and 'items' in d
+        assert "name" in d and "items" in d
 
-        return cls(name=d['name'], items=[Item(**item) for item in d['items']])
+        return cls(name=d["name"], items=[Item(**item) for item in d["items"]])
