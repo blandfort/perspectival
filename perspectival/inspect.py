@@ -1,10 +1,13 @@
 import html
+from typing import Tuple
 import torch
 import torch.nn.functional as F
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from IPython.display import HTML
+
+from .model import Transformer
 
 
 def tokenize_texts(tokenizer, texts):
@@ -45,24 +48,15 @@ def get_top_k_tokens(logits, tokenizer, top_k, mode, token=None):
     return top_formatted.replace("\n", "NEWLINE").replace("'", "QUOTE")
 
 
-def inspect_texts(
+def _compute_token_differences(
     texts: str,
-    models,
+    models: Tuple[Transformer, Transformer],
     mode: str = "log_likelihoods",
-    color_map_name: str = "Blues",
-    max_color: float = 0.7,  # Ensure lighter colors
-    top_k: int = 5,
 ):
     assert len(models) == 2
 
-    if models[0].lazy_loading:
-        model1, tokenizer1 = models[0]._load_model()
-    else:
-        model1, tokenizer1 = models[0].model, models[0].tokenizer
-    if models[1].lazy_loading:
-        model2, tokenizer2 = models[1]._load_model()
-    else:
-        model2, tokenizer2 = models[1].model, models[1].tokenizer
+    model1, tokenizer1 = models[0].get_model_and_tokenizer()
+    model2, tokenizer2 = models[1].get_model_and_tokenizer()
 
     encoded_texts1 = tokenize_texts(tokenizer1, texts)
     encoded_texts2 = tokenize_texts(tokenizer2, texts)
@@ -136,6 +130,28 @@ def inspect_texts(
         tokens.append(s_tokens)
         token_ids.append(s_token_ids)
 
+    return logits, scores1, scores2, diffs, tokens, token_ids
+
+
+def inspect_texts(
+    texts: str,
+    models: Tuple[Transformer, Transformer],
+    mode: str = "log_likelihoods",
+    color_map_name: str = "Blues",
+    max_color: float = 0.7,  # Ensure lighter colors
+    top_k: int = 5,
+):
+    logits, scores1, scores2, diffs, tokens, token_ids = _compute_token_differences(
+        texts=texts,
+        models=models,
+        mode=mode,
+    )
+
+    assert len(models) == 2
+
+    _, tokenizer1 = models[0].get_model_and_tokenizer()
+    _, tokenizer2 = models[1].get_model_and_tokenizer()
+
     html_string = "<div>"
     color_map = plt.get_cmap(color_map_name)
 
@@ -145,7 +161,8 @@ def inspect_texts(
     scaled_diffs = np.abs(diffs) * max_color / max_diff
 
     for sequence_id in range(len(texts)):
-        # For the first token we don't have disagreement because it is only used as input
+        # For the first token we don't have disagreement because it is only used
+        # as input
         sentence_html = f"<p>{html.escape(tokens[sequence_id][0])}"
 
         for j, (token, token_id, scaled_diff, diff, score1, score2) in enumerate(
@@ -170,25 +187,45 @@ def inspect_texts(
                 logits[1][sequence_id][j], tokenizer2, top_k, mode
             )
 
-            mouseover_text = f"Difference for actual token ({token}): {diff:.4f} ({models[0].name}: {score1:.4f}, {models[1].name}: {score2:.4f})"
-            mouseover_text += f"<br />{models[0].name} Top-{top_k}: {top_tokens1}<br />{models[1].name} Top-{top_k}: {top_tokens2}"
+            mouseover_text = (
+                f"Difference for actual token ({token}): "
+                + f"{diff:.4f} ({models[0].name}: {score1:.4f}, {models[1].name}: "
+                + f"{score2:.4f})"
+            )
+            mouseover_text += (
+                f"<br />{models[0].name} Top-{top_k}: "
+                + f"{top_tokens1}<br />{models[1].name} Top-{top_k}: {top_tokens2}"
+            )
 
-            sentence_html += f"<span style='background-color: {hex_color}; cursor: pointer;' onmouseover=\"this.parentNode.parentNode.nextSibling.innerHTML='{html.escape(mouseover_text)}';\" onmouseout=\"this.parentNode.parentNode.nextSibling.innerHTML='Hover over a token for details.';\">{html.escape(token)} </span>"
+            sentence_html += (
+                f"<span style='background-color: {hex_color}; "
+                + "cursor: pointer;' onmouseover=\"this.parentNode.parentNode."
+                + f"nextSibling.innerHTML='{html.escape(mouseover_text)}';\" "
+                + 'onmouseout="this.parentNode.parentNode.nextSibling.innerHTML'
+                + f"='Hover over a token for details.';\">{html.escape(token)} </span>"
+            )
         sentence_html += "</p>"
 
         html_string += sentence_html
 
-    html_string += "</div><div style='margin-top: 20px; border: 1px solid #ccc; padding: 10px;'>Hover over a token for details.</div>"
+    html_string += (
+        "</div><div style='margin-top: 20px; border: 1px solid #ccc; "
+        + "padding: 10px;'>Hover over a token for details.</div>"
+    )
     # Adding a color legend
     html_string += "<div style='display: flex; align-items: center; margin-top: 10px;'>"
     html_string += (
-        "<div style='width: 100px; height: 20px; background-image: linear-gradient(to right, "
+        "<div style='width: 100px; height: 20px; background-image: "
+        + "linear-gradient(to right, "
         + matplotlib.colors.rgb2hex(color_map(0)[:3])
         + ", "
         + matplotlib.colors.rgb2hex(color_map(0.7)[:3])
         + ");'></div>"
     )
-    html_string += f"<div style='margin-left: 10px;'>Absolute value: Min ({np.min(np.abs(diffs)):.2f}) ⟶ Max ({np.max(np.abs(diffs)):.2f})</div></div>"
-    html_string += "</div>"
+    html_string += (
+        "<div style='margin-left: 10px;'>Absolute value: "
+        + f"Min ({np.min(np.abs(diffs)):.2f}) ⟶ Max ({np.max(np.abs(diffs)):.2f})</div>"
+    )
+    html_string += "</div></div>"
 
     return HTML(html_string)

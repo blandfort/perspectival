@@ -74,3 +74,11 @@ class Model(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def compute_option_log_likelihoods(self, items: List[Item]):
         raise NotImplementedError()
+
+    @abc.abstractmethod
+    def compute_continuations(
+        self,
+        items: List[Item],
+        **kwargs,
+    ) -> List[str]:
+        raise NotImplementedError()

@@ -113,16 +113,20 @@ class Transformer(Model):
 
         return model, tokenizer
 
+    def get_model_and_tokenizer(self):
+        if self.lazy_loading:
+            model, tokenizer = self._load_model()
+        else:
+            model, tokenizer = self.model, self.tokenizer
+        return model, tokenizer
+
     def compute_continuations(
         self,
         items: List[Item],
         **kwargs,
     ) -> List[str]:
         """Generate continuations of the prompts of all items"""
-        if self.lazy_loading:
-            model, tokenizer = self._load_model()
-        else:
-            model, tokenizer = self.model, self.tokenizer
+        model, tokenizer = self.get_model_and_tokenizer()
 
         continuations = []
 
@@ -142,10 +146,7 @@ class Transformer(Model):
         items: List[Item],
         **kwargs,
     ) -> List[float]:
-        if self.lazy_loading:
-            model, tokenizer = self._load_model()
-        else:
-            model, tokenizer = self.model, self.tokenizer
+        model, tokenizer = self.get_model_and_tokenizer()
 
         # Initialize return list
         log_likelihoods = []
@@ -253,10 +254,7 @@ class SimpleTransformer(Transformer):
         subtract_prompt: bool = True,
         **kwargs,
     ) -> List[float]:
-        if self.lazy_loading:
-            model, tokenizer = self._load_model()
-        else:
-            model, tokenizer = self.model, self.tokenizer
+        model, tokenizer = self.get_model_and_tokenizer()
 
         log_likelihoods = []
 

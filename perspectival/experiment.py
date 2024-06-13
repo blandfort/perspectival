@@ -19,6 +19,10 @@ from .features import (
 )
 
 
+class PreconditionError(Exception):
+    """Exception to raise if any precondition to run code is not fulfilled."""
+
+
 class Experiment:
     name: str
     dataset: Dataset
@@ -61,7 +65,8 @@ class Experiment:
             self.comparison_features[feature.name][feature.models] = feature
         else:
             raise NotImplementedError(
-                "Feature registration is only implemented for item-based, model-based and comparative features!"
+                "Feature registration is only implemented for item-based, "
+                + "model-based and comparative features!"
             )
 
     def get_feature(
@@ -82,7 +87,8 @@ class Experiment:
             if models is None:
                 if len(relevant_features) > 1:
                     raise ValueError(
-                        "Need to specify 'models' for comparative features which exist for several pairs of models!"
+                        "Need to specify 'models' for comparative features which "
+                        + "exist for several pairs of models!"
                     )
                 if len(relevant_features) == 1:
                     return list(relevant_features.values())[0]
@@ -139,8 +145,9 @@ class Experiment:
     def compute_correctness(self, models: List[Model]):
         ground_truth = self.get_feature("GroundTruth")
         if ground_truth is None:
-            raise Exception(
-                "PredictionCorrectness can only be computed if ground truth information is available and added to the experiment!"
+            raise PreconditionError(
+                "PredictionCorrectness can only be computed if ground truth "
+                + "information is available and added to the experiment!"
             )
 
         for model in models:
@@ -200,7 +207,10 @@ class Experiment:
         if name is None:
             scores_text = "scores" if ordering_scores is not None else "default"
             mask_text = ", masked" if mask is not None else ""
-            name = f"{self.name} Samples (num={num}, sampling={sampling_method}, order={scores_text}{mask_text})"
+            name = (
+                f"{self.name} Samples (num={num}, sampling={sampling_method}, "
+                + f"order={scores_text}{mask_text})"
+            )
 
         if mask is not None:
             assert len(mask) == len(self.dataset.items)
@@ -304,7 +314,8 @@ class Experiment:
                 )
 
             output_feature_vals = (
-                f"{np.mean(output_values):.2f} ({conf_interval[0]:.2f}-{conf_interval[1]:.2f})"
+                f"{np.mean(output_values):.2f} "
+                + f"({conf_interval[0]:.2f}-{conf_interval[1]:.2f})"
                 if conf_interval is not None
                 else f"{np.mean(output_values):.2f}"
             )

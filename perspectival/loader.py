@@ -78,8 +78,8 @@ def load_rotten_tomatoes(split: str = "train") -> Tuple[Dataset, List[Feature]]:
 
     for ix, element in enumerate(raw_dataset):
         prompt = (
-            f"Question: What is the sentiment of the text below?\n\n"
-            + "Text: '{element['text']}'\n\nAnswer: The sentiment is"
+            "Question: What is the sentiment of the text below?\n\n"
+            + f"Text: '{element['text']}'\n\nAnswer: The sentiment is"
         )
         correct_index = element[
             "label"
@@ -164,7 +164,7 @@ def load_anthropic_eval_data(
 
             if path.endswith(".jsonl"):
                 category = path.rsplit(".", 1)[0]
-                with open(dir_path / Path(path), "r") as f:
+                with open(dir_path / Path(path), "r", encoding="utf8") as f:
                     raw_items = [json.loads(line) for line in f]
 
                 for ix, raw_item in enumerate(raw_items):
