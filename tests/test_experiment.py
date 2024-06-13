@@ -1,7 +1,11 @@
+import os
 import pytest
 
 from perspectival.loader import load_hellaswag
 from perspectival.experiment import Experiment
+
+
+TEST_DATA_DIR = "tests/test_data"
 
 
 @pytest.fixture
@@ -35,8 +39,11 @@ def test_experiment_dictionary_conversion(experiment):
 def test_experiment_saving_and_loading(experiment):
     # TODO add features from two models as well!
 
-    experiment.save("tests/test_data")
-    restored_experiment = Experiment.load("tests/test_data", experiment.name)
+    if not os.path.isdir(TEST_DATA_DIR):
+        os.makedirs(TEST_DATA_DIR)
+
+    experiment.save(TEST_DATA_DIR)
+    restored_experiment = Experiment.load(TEST_DATA_DIR, experiment.name)
 
     # Verify that all entries are still there
     # TODO Ideally we implement '==' for Experiment
