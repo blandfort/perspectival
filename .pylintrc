@@ -3,7 +3,7 @@ ignore=CVS
 persistent=yes
 
 [MESSAGES CONTROL]
-disable=C0111,  # Missing docstring
+disable=C0111,W0621  # Missing docstring, redifining variables (caused by pytest)
 
 [REPORTS]
 output-format=colorized

@@ -126,22 +126,4 @@ To make sure that your changes comply to best practices, set up pre-commit hooks
 
 ## Plans
 
-TODO The most important functionality is already there. Create issues for the points below
-
-Functionality to add:
-
-- Adding explanations and evaluate how much of a comparison feature one or several features can explain
-- Feature dependencies: Extending analysis of how features relate to each other, e.g. to compute correlation coefficients between LogDisagreement and scalar input features
-- Extending to architecture-specific comparisons like differences in attention
-- Make it possible to view most similar items to a selected one (ideally based on embeddings), to quickly check some intuitions like "Additional structure in the prompt like [header] leads to more disagreement"
-- Compare more than two models: Mostly requires computing different comparison features
-
-Engineering and usability features to add:
-
-- Further dataset loaders
-- Add linting (adding CICD pipeline)
-- Add further testing
-- Use proper versioning and create package for registry in CICD pipeline
-- Implement adding of datasets and experiments
-  - For experiments with different items but same features, concatenate all
-  - For experiments with same items, combine features
+I am considering to extend the package with architecture-specific comparisons such as checking differences in attention. For example, this could help to look deeper into the differences between base models and their fine-tuned versions.
