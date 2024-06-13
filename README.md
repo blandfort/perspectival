@@ -6,7 +6,7 @@ The goal rather is to identify in which situations models behave differently and
 
 Notes:
 
-* This repository is very early-stage! The main functionality should be working, but the number of implemented features is still limited.
+* This repository is early-stage! (The main functionality should be working though.)
 * I'm looking for collaborators. If you're interested please contact me!
 
 
@@ -19,10 +19,12 @@ To install the `perspectival` package, run:
 ```bash
 git clone https://github.com/blandfort/perspectival
 cd perspectival
+python3 -m venv venv
+source venv/bin/activate
 pip install -e .
 ```
 
-(So far tested on MacOS with Python3.11.0.)
+(So far tested on MacOS with Python3.11.0 and Linux with Python3.10.)
 
 
 ### Workflow
@@ -42,8 +44,10 @@ Format: Models used for experiments have to implement the interface Model (see [
 
 Available models:
 
-- Model classes from [model.py](perspectival/model.py)
-  - Currently, this includes two classes to use Huggingface transformers (tested for Apple's OpenELM models, GPT2 and DistilGPT2)
+- Model classes from [model.py](perspectival/model.py), the standard class being `Transformer` to use HuggingFace transformers
+  - Tested for several models including Apple's OpenELM models, GPT2, DistilGPT2, MPT-7B, Qwen2
+  - You can pass model arguments when initializing, e.g. for authenticating with a HuggingFace token, or to use half-precision
+  - Note: For some models you need to install additional packages (such as accelerate, protobuf, sentencepiece, einops)
 - You can implement your own model class (as subclass of Model)
 
 
@@ -68,7 +72,7 @@ For example, this allows you to run brief sanity checks and verifying that every
 
 ### Adding Features to Experiments
 
-Format: Features used for experiments have to implement the interface Feature (see [interfaces.py](perspectival/interfaces.py). There are three types of features to use:
+Format: Features used for experiments have to implement the interface Feature (see [interfaces.py](perspectival/interfaces.py)). There are three types of features to use:
 
 - ItemFeature: These features don't depend on any model but either come with the dataset or are computed without the models to be analyzed (e.g. based on regular expressions on the item text)
 - ModelFeature: These features are computed for a single model. An example is OptionLogLikelihood, which computes the log likelihoods a model assigns to the different options described in an item.
@@ -95,20 +99,41 @@ Once you have an Experiment with interesting features, you can
 * Look at token-level differences, using `perspectival.inspect` (for an example, see [token_level_differences.ipynb](examples/token_level_differences.ipynb))
 
 
+## Notes on Cloud Usage
+
+If you want to run experiments in the cloud (which typically makes sense if you don't have a local GPU), the easiest way would be to rent a VM.
+
+So far, I successfully ran experiments on a pod from RunPod. Some notes you might find helpful to do the same:
+
+- Pod: 24GB of GPU memory, 50GB disk and 20GB pod volume, using PyTorch image
+  - This was for running models such as Mistral-7B-v0.3 in half precision; for full precision or larger models you will need bigger GPUs
+  - This cost around 0.50$/h while running the pod, and <10$/month when the pod was paused (but still existing)
+- How to set up perspectival on a pod:
+  - Open jupyterlab on the pod
+  - In jupyterlab, start a terminal where you create the venv and install the package (should be inside the `/workspace` directory if you want it to persist after stopping the pod!)
+  - Make the venv available in jupyter notebooks by running `python -m ipykernel install --user --name=perspectival`
+  - You might have to restart jupyter notebooks before the kernel becomes available
+  - In case you want HuggingFace models to persist after pausing the pod, set the environment variable `HF_HOME` to a path within `/workspace`
+
+
 ## Plans
+
+TODO The most important functionality is already there. Create issues for the points below
 
 Functionality to add:
 
 - Adding explanations and evaluate how much of a comparison feature one or several features can explain
 - Feature dependencies: Extending analysis of how features relate to each other, e.g. to compute correlation coefficients between LogDisagreement and scalar input features
 - Extending to architecture-specific comparisons like differences in attention
-- For examples, also make it possible to view most similar ones (ideally based on embeddings), to quickly check some intuitions like "Additional structure in the prompt like [header] leads to more disagreement"
+- Make it possible to view most similar items to a selected one (ideally based on embeddings), to quickly check some intuitions like "Additional structure in the prompt like [header] leads to more disagreement"
 - Compare more than two models: Mostly requires computing different comparison features
 
 Engineering and usability features to add:
 
-- Improve efficiency: Can we use float16 models? Also use batching
 - Further dataset loaders
 - Add linting (adding CICD pipeline)
 - Add further testing
 - Use proper versioning and create package for registry in CICD pipeline
+- Implement adding of datasets and experiments
+  - For experiments with different items but same features, concatenate all
+  - For experiments with same items, combine features
