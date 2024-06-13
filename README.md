@@ -107,12 +107,13 @@ So far, I successfully ran experiments on a pod from RunPod. Some notes you migh
 
 - Pod: 24GB of GPU memory, 50GB disk and 20GB pod volume, using PyTorch image
   - This was for running models such as Mistral-7B-v0.3 in half precision; for full precision or larger models you will need bigger GPUs
-  - This cost around 0.50$/h while running the pod, and <10$/month when the pod was paused (but still existing)
+  - This cost <0.50$/h while running the pod, and <10$/month when the pod was paused (but still existing)
+  - If you want to access models from gated repos, define a RunPod secret and pass it to the pod as environment variable (under "Edit Template" when setting up)
 - How to set up perspectival on a pod:
   - Open jupyterlab on the pod
-  - In jupyterlab, start a terminal where you create the venv and install the package (should be inside the `/workspace` directory if you want it to persist after stopping the pod!)
-  - Make the venv available in jupyter notebooks by running `python -m ipykernel install --user --name=perspectival`
-  - You might have to restart jupyter notebooks before the kernel becomes available
+  - In jupyterlab, start a terminal and install the package
+    - Skip the creation of the virtual environment, as PyTorch is already installed globally (and otherwise you need to manually add a new jupyter kernel)
+    - Should be inside the `/workspace` directory if you want it to persist after stopping the pod!)
   - In case you want HuggingFace models to persist after pausing the pod, set the environment variable `HF_HOME` to a path within `/workspace`
 
 
