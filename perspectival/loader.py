@@ -33,7 +33,7 @@ def load_hellaswag(
         return text
 
     # Load the dataset
-    raw_dataset = load_dataset(dataset_name, split=split)
+    raw_dataset = load_dataset(dataset_name, split=split, trust_remote_code=True)
 
     items = []
     ground_truth = []
@@ -94,12 +94,10 @@ def load_rotten_tomatoes(split: str = "train") -> Tuple[Dataset, List[Feature]]:
     return dataset, features
 
 
-def parse_anthropic_item(raw_item: dict):
+def _parse_anthropic_item(raw_item: dict):
     text = raw_item["question"]
 
-    # Extract the question if present, otherwise use a default message
     question_match = re.search(r"(Question: )?(.*?)(?=\nChoices:)", text, re.DOTALL)
-    # if question_match else "No question provided."
     question = question_match.group(2)
 
     # Extract the choices and remove the leading identifiers like (A), (B), etc.
@@ -170,7 +168,7 @@ def load_anthropic_eval_data(
                 for ix, raw_item in enumerate(raw_items):
                     item_id = f"{dataset}/{subdir}/{category}/{ix}"
 
-                    question, options, mb, nmb = parse_anthropic_item(raw_item)
+                    question, options, mb, nmb = _parse_anthropic_item(raw_item)
                     # NOTE: Our format is slightly different from the one Anthropic
                     # mentions in the repo
                     # (https://github.com/anthropics/evals/tree/main/advanced-ai-risk)
@@ -181,6 +179,50 @@ def load_anthropic_eval_data(
                     matching_behavior.append(mb)
                     not_matching_behavior.append(nmb)
         dataset = Dataset(name=f"anthropic evals - {dataset} - {subdir}", items=items)
+        features = [
+            Category(values=category_features),
+            NamedFeature(values=matching_behavior, name="Choice_matching_behavior"),
+            NamedFeature(
+                values=not_matching_behavior, name="Choice_not_matching_behavior"
+            ),
+        ]
+        return dataset, features
+
+    if dataset == "persona":
+        items = []
+        category_features = []
+        matching_behavior = []
+        not_matching_behavior = []
+
+        dir_path = repo_path / Path(dataset)
+        for path in os.listdir(dir_path):
+
+            if path.endswith(".jsonl"):
+                category = path.rsplit(".", 1)[0]
+                with open(dir_path / Path(path), "r", encoding="utf8") as f:
+                    raw_items = [json.loads(line) for line in f]
+
+                for ix, raw_item in enumerate(raw_items):
+                    item_id = f"{dataset}/{category}/{ix}"
+
+                    question = raw_item["question"]
+                    options = [
+                        raw_item["answer_matching_behavior"],
+                        raw_item["answer_not_matching_behavior"],
+                    ]
+                    mb = 0
+                    nmb = 1
+
+                    # NOTE: Our format is slightly different from the one Anthropic
+                    # mentions in the repo
+                    # (https://github.com/anthropics/evals/tree/main/advanced-ai-risk)
+                    prompt = f"Human: {question}\nAssistant:"
+
+                    items.append(Item(prompt=prompt, options=options, id=item_id))
+                    category_features.append(category)
+                    matching_behavior.append(mb)
+                    not_matching_behavior.append(nmb)
+        dataset = Dataset(name=f"anthropic evals - {dataset}", items=items)
         features = [
             Category(values=category_features),
             NamedFeature(values=matching_behavior, name="Choice_matching_behavior"),
