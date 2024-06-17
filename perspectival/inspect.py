@@ -7,11 +7,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 from IPython.display import HTML
 
-from .model import Transformer
+from .model import Transformer, device
 
 
 def tokenize_texts(tokenizer, texts):
-    return tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
+    return tokenizer(texts, padding=True, truncation=True, return_tensors="pt").to(
+        device
+    )
 
 
 def get_logits(model, encoded_texts):
@@ -39,7 +41,7 @@ def get_top_k_tokens(logits, tokenizer, top_k, mode, token=None):
     top_formatted = ", ".join(
         [
             f"{token} ({score:.2f})"
-            for token, score in zip(top_tokens, top_scores.numpy())
+            for token, score in zip(top_tokens, top_scores.detach().cpu().numpy())
         ]
     )
 
