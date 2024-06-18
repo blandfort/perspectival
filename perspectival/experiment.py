@@ -186,10 +186,18 @@ class Experiment:
     def compute_continuation_disagreement(self, models: Tuple[Model, Model], **kwargs):
         assert len(models) == 2
 
-        tc1 = TextContinuation.compute(dataset=self.dataset, model=models[0], **kwargs)
-        tc2 = TextContinuation.compute(dataset=self.dataset, model=models[1], **kwargs)
-        self.register_feature(tc1)
-        self.register_feature(tc2)
+        tc1 = self.get_feature("TextContinuation", model=models[0].name)
+        if tc1 is None:
+            tc1 = TextContinuation.compute(
+                dataset=self.dataset, model=models[0], **kwargs
+            )
+            self.register_feature(tc1)
+        tc2 = self.get_feature("TextContinuation", model=models[1].name)
+        if tc2 is None:
+            tc2 = TextContinuation.compute(
+                dataset=self.dataset, model=models[1], **kwargs
+            )
+            self.register_feature(tc2)
 
         cd = ContinuationDisagreement.compute(
             dataset=self.dataset, continuations=[tc1, tc2], models=models

@@ -19,6 +19,7 @@ repos:
       - id: pytest
         name: pytest
         entry: pytest
+        entry: bash -c 'source venv/bin/activate && pytest'
         language: system
         types: [python]
         pass_filenames: false  # Avoid passing file names to pytest
