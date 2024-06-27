@@ -1,9 +1,10 @@
 import sys
-from typing import Tuple
+from typing import Tuple, Optional, List
 import numpy as np
 
 from .interfaces import ItemFeature, ModelFeature, ComparisonFeature, Model
 from .dataset import Dataset, Item
+from .util import truncate_at_stopping_strings
 
 
 class Category(ItemFeature):
@@ -61,8 +62,23 @@ class ModelChoices(ModelFeature):
 class TextContinuation(ModelFeature):
 
     @classmethod
-    def compute(cls, dataset: Dataset, model: Model, **kwargs):
+    def compute(
+        cls,
+        dataset: Dataset,
+        model: Model,
+        stopping_strings: Optional[List[str]] = None,
+        **kwargs
+    ):
         continuations = model.compute_continuations(items=dataset.items, **kwargs)
+
+        # NOTE: We truncate after generation. This isn't efficient, but as of
+        # June 2024, HuggingFace generation doesn't seem to provide the possibility
+        # to stop generation at occurrence of specific tokens or substrings.
+        if stopping_strings is not None:
+            continuations = [
+                truncate_at_stopping_strings(c, stopping_strings) for c in continuations
+            ]
+
         return cls(model=model.name, values=continuations)
 
 
