@@ -102,10 +102,6 @@ class Transformer(Model):
         if self.model_name.startswith("apple/OpenELM"):
             # tokenizer_name = 'NousResearch/Llama-2-7b-hf'
             tokenizer_name = "meta-llama/Llama-2-7b-hf"
-        elif self.model_name == "mistralai/Mistral-7B-Instruct-v0.3":
-            # Mistral team recommends using the mistral_common tokenizer
-            # (Note from HuggingFace model page, status Jul 3, 24)
-            tokenizer_name = "mistral_common"
         else:
             tokenizer_name = self.model_name
         tokenizer = AutoTokenizer.from_pretrained(
@@ -152,7 +148,7 @@ class Transformer(Model):
         self,
         items: List[Item],
         **kwargs,
-    ) -> List[float]:
+    ) -> List[List[float]]:
         model, tokenizer = self.get_model_and_tokenizer()
 
         # Initialize return list
@@ -240,7 +236,7 @@ class SimpleTransformer(Transformer):
         items: List[Item],
         subtract_prompt: bool = False,
         **kwargs,
-    ) -> List[float]:
+    ) -> List[List[float]]:
         model, tokenizer = self.get_model_and_tokenizer()
 
         log_likelihoods = []
