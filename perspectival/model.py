@@ -122,6 +122,12 @@ class Transformer(Model):
             model, tokenizer = self.model, self.tokenizer
         return model, tokenizer
 
+    def make_continuation_prompt(
+        self,
+        item: Item,
+    ) -> str:
+        return item.get_continuation_prompt()
+
     def compute_continuations(
         self,
         items: List[Item],
@@ -134,17 +140,24 @@ class Transformer(Model):
 
         print("Computing text continuations ...")
         for item in tqdm(items):
+            beginning = self.make_continuation_prompt(item)
             text = generate(
                 transformer=model,
                 tokenizer=tokenizer,
-                beginning=item.get_continuation_prompt(),
+                beginning=beginning,
                 **kwargs,
             )
             # Only consider the part after the given text
-            text = text[len(item.prompt) :]
+            text = text[len(beginning) :]
 
             continuations.append(text)
         return continuations
+
+    def make_option_prompts(
+        self,
+        item: Item,
+    ) -> List[str]:
+        return item.get_statements()
 
     def compute_option_log_likelihoods(
         self,
@@ -158,7 +171,7 @@ class Transformer(Model):
 
         print("Computing option log likelihoods ...")
         for item in tqdm(items):
-            input_texts = item.get_statements()
+            input_texts = self.make_option_prompts(item)
 
             # Tokenize the combined texts
             encoded_inputs = tokenizer(
@@ -245,7 +258,7 @@ class SimpleTransformer(Transformer):
 
         print("Computing option log likelihoods ...")
         for item in tqdm(items):
-            input_texts = item.get_statements()
+            input_texts = self.make_option_prompts(item)
 
             if subtract_prompt:
                 # .rstrip() is to avoid that a whitespace token with low likelihood
@@ -255,6 +268,9 @@ class SimpleTransformer(Transformer):
                     compute_token_log_likelihood(
                         transformer=model,
                         tokenizer=tokenizer,
+                        # FIXME This should be done differently in case the model
+                        # adds stuff to the prompt. Call self.make_option_prompts
+                        # for an empty option instead.
                         text=item.prompt.rstrip(),
                         add_special_tokens=True,
                     )["log_likelihoods"]

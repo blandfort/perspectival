@@ -267,9 +267,7 @@ class Experiment:
         feature_names: Optional[List[str]] = None,
     ):
         item = self.dataset.items[item_ix]
-        print(f"ITEM ({item.id})")
-        print(f'"""{item.prompt}"""')
-        print(f"Options: {item.options}")
+        item.print()
 
         if feature_names is None:
             feature_names = list(self.item_features.keys())

@@ -29,6 +29,11 @@ class Item(BaseModel):
         """Get a prompt that is used as input to generate continuations."""
         return self.prompt
 
+    def print(self) -> None:
+        print(f"ITEM ({self.id})")
+        print(f'"""{self.prompt}"""')
+        print(f"Options: {self.options}")
+
 
 class PlaceholderItem(Item):
     placeholder: str = "_"

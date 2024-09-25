@@ -45,8 +45,8 @@ def test_option_ranking(transformer_model, test_data):
     log_likelihoods = transformer_model.compute_option_log_likelihoods(items=[item])[0]
 
     simple_log_likelihoods = []
-    for option in item.options:
-        text = item.prompt + option
+    option_prompts = transformer_model.make_option_prompts(item=item)
+    for text in option_prompts:
         log_ls = np.sum(
             compute_token_log_likelihood(
                 transformer_model.model, transformer_model.tokenizer, text=text
