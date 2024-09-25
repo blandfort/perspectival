@@ -21,6 +21,7 @@ def generate(
     max_new_tokens: int = 64,
     do_sample=False,
     top_p: Optional[float] = None,
+    only_new_part: bool = True,
 ) -> str:
     inputs = tokenizer(beginning, return_tensors="pt").to(device)
     generated_ids = transformer.generate(
@@ -31,6 +32,8 @@ def generate(
         max_new_tokens=max_new_tokens,
         pad_token_id=tokenizer.pad_token_id,
     )
+    if only_new_part:
+        generated_ids = generated_ids[:, len(inputs.input_ids[0]) :]
     return tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
 
@@ -147,8 +150,6 @@ class Transformer(Model):
                 beginning=beginning,
                 **kwargs,
             )
-            # Only consider the part after the given text
-            text = text[len(beginning) :]
 
             continuations.append(text)
         return continuations
@@ -179,7 +180,7 @@ class Transformer(Model):
                 padding=True,
                 truncation=True,
                 return_tensors="pt",
-                add_special_tokens=True,
+                add_special_tokens=True,  # TODO Do we want this for ChatTransformer?
             ).to(device)
 
             # Get logits from the model

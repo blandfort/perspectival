@@ -46,7 +46,7 @@ Format: Models used for experiments have to implement the interface Model (see [
 Available models:
 
 - Model classes from [model.py](perspectival/model.py), the standard class being `Transformer` to use HuggingFace transformers
-  - Tested for several models including Apple's OpenELM models, GPT2, DistilGPT2, MPT-7B, Qwen2
+  - Tested for several models including Apple's OpenELM models, GPT2, DistilGPT2, MPT-7B, Qwen2.5, Llama3
   - You can pass model arguments when initializing, e.g. for authenticating with a HuggingFace token, or to use half-precision
   - Note: For some models you need to install additional packages (such as accelerate, protobuf, sentencepiece, einops)
 - You can implement your own model class (as subclass of Model)
