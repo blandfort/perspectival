@@ -34,6 +34,7 @@ class Experiment:
         self,
         name,
         dataset,
+        *,
         item_features=None,
         model_features=None,
         comparison_features=None,
@@ -215,6 +216,7 @@ class Experiment:
     def sample(
         self,
         num: Optional[int] = None,
+        *,
         sampling_method: str = "random",
         ordering_scores: Optional[List[float]] = None,
         mask: Optional[List[bool]] = None,

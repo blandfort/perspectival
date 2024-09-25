@@ -16,6 +16,7 @@ def generate(
     transformer,
     tokenizer,
     beginning: str,
+    *,
     temperature: float = 0,
     max_new_tokens: int = 64,
     do_sample=False,
@@ -76,6 +77,7 @@ class Transformer(Model):
     def __init__(
         self,
         model_name,
+        *,
         lazy_loading: bool = True,
         model_kwargs: Optional[dict] = None,
         tokenizer_kwargs: Optional[dict] = None,
