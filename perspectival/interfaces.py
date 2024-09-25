@@ -72,7 +72,21 @@ class Model(metaclass=abc.ABCMeta):
     name: str
 
     @abc.abstractmethod
-    def compute_option_log_likelihoods(self, items: List[Item]):
+    def compute_option_log_likelihoods(self, items: List[Item]) -> List[List[float]]:
+        """Take a list of items and return log likelihoods for the different
+        item options.
+
+        Returns a list of item results, where each item result is a list of
+        log likelihoods corresponding to the different options included in the item.
+        (That is, index [i][j] contains the log likelihood of the j-th option
+        of the i-th item.)
+
+        Note that interpreting absolute values of log likelihoods can be misleading
+        because depending on the model implementation, log likelihoods from the
+        prompt might be included.
+        Therefore, avoid directly comparing option log likelihoods from
+        different models, but rather compare how ranks of different options
+        differ from one model to another."""
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -81,4 +95,5 @@ class Model(metaclass=abc.ABCMeta):
         items: List[Item],
         **kwargs,
     ) -> List[str]:
+        """Take a list of items and use the model to continue the given prompts."""
         raise NotImplementedError()

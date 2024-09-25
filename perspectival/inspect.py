@@ -139,6 +139,7 @@ def inspect_texts(
     texts: str,
     models: Tuple[Transformer, Transformer],
     mode: str = "log_likelihoods",
+    *,
     color_map_name: str = "Blues",
     max_color: float = 0.7,  # Ensure lighter colors
     top_k: int = 5,

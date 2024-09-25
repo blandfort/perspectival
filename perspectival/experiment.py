@@ -34,6 +34,7 @@ class Experiment:
         self,
         name,
         dataset,
+        *,
         item_features=None,
         model_features=None,
         comparison_features=None,
@@ -142,6 +143,22 @@ class Experiment:
             comparison_features=comparison_features,
         )
 
+    def compute_model_choices(self, model: Model) -> ModelChoices:
+        """Compute choices and option log likelihoods for the given model.
+
+        Features are registered so they can be re-used.
+        If any of these features already exists, computation is skipped."""
+        model_choices = self.get_feature("ModelChoices", model=model.name)
+        if model_choices is None:
+            lls = self.get_feature("OptionLogLikelihood", model=model.name)
+            if lls is None:
+                lls = OptionLogLikelihood.compute(self.dataset, model=model)
+                self.register_feature(lls)
+
+            model_choices = ModelChoices.compute(lls)
+            self.register_feature(model_choices)
+        return model_choices
+
     def compute_correctness(self, models: List[Model]):
         ground_truth = self.get_feature("GroundTruth")
         if ground_truth is None:
@@ -151,15 +168,7 @@ class Experiment:
             )
 
         for model in models:
-            model_choices = self.get_feature("ModelChoices", model=model.name)
-            if model_choices is None:
-                lls = self.get_feature("OptionLogLikelihood", model=model.name)
-                if lls is None:
-                    lls = OptionLogLikelihood.compute(self.dataset, model=model)
-                    self.register_feature(lls)
-
-                model_choices = ModelChoices.compute(lls)
-                self.register_feature(model_choices)
+            model_choices = self.compute_model_choices(model=model)
             self.register_feature(
                 PredictionCorrectness.compute(
                     model_choices=model_choices, ground_truth=ground_truth
@@ -207,6 +216,7 @@ class Experiment:
     def sample(
         self,
         num: Optional[int] = None,
+        *,
         sampling_method: str = "random",
         ordering_scores: Optional[List[float]] = None,
         mask: Optional[List[bool]] = None,
@@ -271,14 +281,18 @@ class Experiment:
             feature_list = self.get_features(feature_name)
             for feature in feature_list:
                 if isinstance(feature, ItemFeature):
-                    print(feature_name, feature.values[item_ix])
+                    print(f"{feature_name}: {feature.values[item_ix]}")
                 elif isinstance(feature, ModelFeature):
-                    print(feature_name, feature.model, feature.values[item_ix])
+                    print(
+                        f"{feature_name} - {feature.model}: {feature.values[item_ix]}"
+                    )
                 elif isinstance(feature, ComparisonFeature):
-                    print(feature_name, feature.models, feature.values[item_ix])
+                    print(
+                        f"{feature_name} - {feature.models}: {feature.values[item_ix]}"
+                    )
                 else:
                     print("Warning: Unknown feature type!")
-                    print(feature_name, feature.values[item_ix])
+                    print(f"{feature_name}: {feature.values[item_ix]}")
 
     def display_items(
         self,

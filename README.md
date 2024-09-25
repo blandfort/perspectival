@@ -8,6 +8,7 @@ Notes:
 
 * This repository is early-stage! (The main functionality should be working though.)
 * I'm looking for collaborators. If you're interested please contact me!
+* I also appreciate feedback and currently the chance is high that I will implement extra features you might ask for, especially if these features increase usability (and fit the roadmap).
 
 
 ## Usage

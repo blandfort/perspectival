@@ -16,6 +16,7 @@ def generate(
     transformer,
     tokenizer,
     beginning: str,
+    *,
     temperature: float = 0,
     max_new_tokens: int = 64,
     do_sample=False,
@@ -76,6 +77,7 @@ class Transformer(Model):
     def __init__(
         self,
         model_name,
+        *,
         lazy_loading: bool = True,
         model_kwargs: Optional[dict] = None,
         tokenizer_kwargs: Optional[dict] = None,
@@ -133,7 +135,10 @@ class Transformer(Model):
         print("Computing text continuations ...")
         for item in tqdm(items):
             text = generate(
-                transformer=model, tokenizer=tokenizer, beginning=item.prompt, **kwargs
+                transformer=model,
+                tokenizer=tokenizer,
+                beginning=item.get_continuation_prompt(),
+                **kwargs,
             )
             # Only consider the part after the given text
             text = text[len(item.prompt) :]
@@ -145,7 +150,7 @@ class Transformer(Model):
         self,
         items: List[Item],
         **kwargs,
-    ) -> List[float]:
+    ) -> List[List[float]]:
         model, tokenizer = self.get_model_and_tokenizer()
 
         # Initialize return list
@@ -153,16 +158,7 @@ class Transformer(Model):
 
         print("Computing option log likelihoods ...")
         for item in tqdm(items):
-            input_texts = [
-                item.prompt
-                + (
-                    " "
-                    if (not item.prompt.endswith(" ") and not option.startswith(" "))
-                    else ""
-                )
-                + option
-                for option in item.options
-            ]
+            input_texts = item.get_statements()
 
             # Tokenize the combined texts
             encoded_inputs = tokenizer(
@@ -177,21 +173,16 @@ class Transformer(Model):
             with torch.no_grad():
                 logits = model(**encoded_inputs, **kwargs).logits
 
-            # Ignore the log probs at the beginning
-            prompt_length = (
-                len(tokenizer(item.prompt, add_special_tokens=False)["input_ids"]) - 1
-            )
-
             # Calculate log probabilities from the logits for each token
             log_probs = F.log_softmax(logits, dim=-1)
 
             if tokenizer.padding_side == "right":
-                # Need to offset by one since last position contains prediction
+                # Need to offset by one since previous position contains prediction
                 # for current token
-                log_probs = log_probs[:, prompt_length - 1 : -1]
+                log_probs = log_probs[:, :-1]
 
-                input_ids = encoded_inputs["input_ids"][:, prompt_length:]
-                attention_mask = encoded_inputs["attention_mask"][:, prompt_length:]
+                input_ids = encoded_inputs["input_ids"][:, 1:]
+                attention_mask = encoded_inputs["attention_mask"][:, 1:]
 
                 # Get log probabilities of actual tokens
                 token_log_probs = log_probs.gather(2, input_ids.unsqueeze(-1)).squeeze(
@@ -204,8 +195,6 @@ class Transformer(Model):
                 )
 
             else:
-                prompt_length += 1  # BOS token
-
                 # Offset by one since likelihoods refer to next position
                 log_probs = log_probs[:, :-1]
                 input_ids = encoded_inputs["input_ids"][:, 1:]
@@ -214,7 +203,6 @@ class Transformer(Model):
                 # Note: We don't offset the attention mask to exclude
                 # likelihoods of BOS tokens for padded sequences
                 # (which can be quite low)
-                # attention_mask = attention_mask[:, 1:]
                 attention_mask = attention_mask[:, :-1]
 
                 token_log_probs = log_probs.gather(2, input_ids.unsqueeze(-1)).squeeze(
@@ -226,10 +214,7 @@ class Transformer(Model):
 
                 # Note: Setting offsets to 0 leads to computing log likelihoods
                 # over the whole sequence including the prompt (useful for debugging)
-                offsets = (
-                    np.argmax(attention_mask.detach().cpu().numpy(), axis=1)
-                    + prompt_length
-                )
+                offsets = np.argmax(attention_mask.detach().cpu().numpy(), axis=1)
                 masked_log_probs = [
                     lls[offset:] for lls, offset in zip(masked_log_probs, offsets)
                 ]
@@ -251,25 +236,16 @@ class SimpleTransformer(Transformer):
     def compute_option_log_likelihoods(
         self,
         items: List[Item],
-        subtract_prompt: bool = True,
+        subtract_prompt: bool = False,
         **kwargs,
-    ) -> List[float]:
+    ) -> List[List[float]]:
         model, tokenizer = self.get_model_and_tokenizer()
 
         log_likelihoods = []
 
         print("Computing option log likelihoods ...")
         for item in tqdm(items):
-            input_texts = [
-                item.prompt
-                + (
-                    " "
-                    if (not item.prompt.endswith(" ") and not option.startswith(" "))
-                    else ""
-                )
-                + option
-                for option in item.options
-            ]
+            input_texts = item.get_statements()
 
             if subtract_prompt:
                 # .rstrip() is to avoid that a whitespace token with low likelihood

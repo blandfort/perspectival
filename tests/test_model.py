@@ -16,6 +16,14 @@ from perspectival.model import compute_token_log_likelihood
             ),
             2,
         ),
+        (Item(id=3, prompt="", options=["One of the blanket", "The sky is blue."]), 0),
+        (
+            Item(
+                id=4, prompt="", options=["Hello world!", "Bello world!", "Hello girl!"]
+            ),
+            1,
+        ),
+        (Item(id=5, prompt="", options=["I am", "I go", "The am"]), 2),
         # Add more test cases here as tuples of (Item, unlikely_index)
     ]
 )
